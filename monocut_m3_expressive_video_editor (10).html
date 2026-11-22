@@ -1,0 +1,3558 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MonoCut — Material 3 Expressive Video Editor</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono & Material Symbols Rounded -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            m3: {
+              bg: '#141414',
+              containerLow: '#1C1C1C',
+              container: '#222222',
+              containerHigh: '#2A2A2A',
+              containerHighest: '#343434',
+              primary: '#E6E6E6',
+              onPrimary: '#141414',
+              secondary: '#B8B8B8',
+              onSurface: '#F2F2F2',
+              onSurfaceVariant: '#9E9E9E',
+              outline: '#4A4A4A',
+              outlineVariant: '#2E2E2E',
+            }
+          },
+          borderRadius: {
+            'm3-sm': '10px',
+            'm3-md': '16px',
+            'm3-lg': '24px',
+            'm3-xl': '32px',
+            'pill': '9999px',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      user-select: text;
+    }
+
+    body {
+      background-color: #141414;
+      color: #F2F2F2;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+
+    .material-symbols-rounded {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+    }
+
+    .material-symbols-rounded.icon-filled {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    }
+
+    /* Monochrome Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #181818;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3A3A3A;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #5A5A5A;
+    }
+
+    /* Monochrome Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #323232;
+      height: 6px;
+      border-radius: 9999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      background: #FFFFFF;
+      border: 2px solid #141414;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+      transition: transform 0.12s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    /* Expressive M3 Button Tactile Press */
+    .m3-btn {
+      transition: transform 0.14s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .m3-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Timeline Clip Selection & Trim Handles */
+    .timeline-clip {
+      transition: box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+    .timeline-clip.selected {
+      border: 2px solid #FFFFFF !important;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 6px 16px rgba(0, 0, 0, 0.55);
+      z-index: 20;
+    }
+    .trim-handle {
+      opacity: 0.35;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+    }
+    .timeline-clip:hover .trim-handle,
+    .timeline-clip.selected .trim-handle {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-m3-bg text-m3-onSurface">
+
+  <!-- ===================================================================== -->
+  <!-- TOP APP BAR (MATERIAL 3 EXPRESSIVE MONOCHROME)                         -->
+  <!-- ===================================================================== -->
+  <header class="h-14 px-3 md:px-4 bg-m3-containerLow border-b border-m3-outlineVariant flex items-center justify-between gap-2 shrink-0 z-30">
+    <!-- Left: Brand & Project Title -->
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-9 h-9 rounded-m3-md bg-m3-primary text-m3-onPrimary flex items-center justify-center shadow-md shrink-0">
+        <span class="material-symbols-rounded icon-filled text-[20px]">movie_edit</span>
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span class="font-display font-extrabold text-sm md:text-base tracking-tight text-white">MonoCut</span>
+          <span class="hidden sm:inline-block text-[10px] font-mono uppercase px-2 py-0.5 rounded-pill bg-m3-containerHigh text-m3-secondary border border-m3-outlineVariant">M3 Expressive</span>
+        </div>
+        <input id="projectTitleInput" type="text" value="Mein Monochrome Edit"
+          class="bg-transparent text-[11px] text-m3-onSurfaceVariant hover:text-white focus:text-white focus:outline-none truncate max-w-[160px] md:max-w-[220px]"
+          title="Projekttitel bearbeiten" />
+      </div>
+    </div>
+
+    <!-- Center: Aspect Ratio & Snap Toggle -->
+    <div class="hidden lg:flex items-center gap-1.5 bg-m3-container p-1 rounded-pill border border-m3-outlineVariant">
+      <button onclick="setAspectRatio('16:9')" id="ratioBtn-16-9"
+        class="m3-btn px-3 py-1 rounded-pill text-xs font-semibold bg-m3-primary text-m3-onPrimary">16:9</button>
+      <button onclick="setAspectRatio('9:16')" id="ratioBtn-9-16"
+        class="m3-btn px-3 py-1 rounded-pill text-xs font-semibold text-m3-onSurfaceVariant hover:text-white">9:16</button>
+      <button onclick="setAspectRatio('1:1')" id="ratioBtn-1-1"
+        class="m3-btn px-3 py-1 rounded-pill text-xs font-semibold text-m3-onSurfaceVariant hover:text-white">1:1</button>
+    </div>
+
+    <!-- Right: Quick Actions (Config Brain, Media Import, MP4 Export) -->
+    <div class="flex items-center gap-1.5 md:gap-2">
+      <button onclick="switchLeftTab('configs')"
+        class="m3-btn px-3 py-2 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-xs font-semibold flex items-center gap-1.5"
+        title="Projekt-Gehirn speichern / Config laden">
+        <span class="material-symbols-rounded text-[17px]">psychology</span>
+        <span class="hidden sm:inline">Config</span>
+      </button>
+
+      <label for="mediaFileInput"
+        class="m3-btn cursor-pointer px-3 py-2 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-xs font-semibold flex items-center gap-1.5"
+        title="Videos oder Bilder importieren">
+        <span class="material-symbols-rounded text-[17px]">add_photo_alternate</span>
+        <span class="hidden md:inline">Medien</span>
+      </label>
+      <input id="mediaFileInput" type="file" accept="video/*,image/*" multiple class="hidden" onchange="handleFiles(this.files)" />
+
+      <button onclick="openExportModal()"
+        class="m3-btn px-3.5 md:px-4 py-2 rounded-pill bg-m3-primary hover:bg-white text-m3-onPrimary text-xs font-display font-bold flex items-center gap-1.5 shadow-lg">
+        <span class="material-symbols-rounded icon-filled text-[17px]">download</span>
+        <span>MP4 Export</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN WORKSPACE (LEFT SIDEBAR + PREVIEW CANVAS + RIGHT INSPECTOR)      -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+
+    <!-- LEFT DOCK: MEDIEN / TEXT & FONTS / HANDY-SZENEN / MUSIK / CONFIGS -->
+    <aside class="w-full md:w-[320px] lg:w-[350px] bg-m3-containerLow border-b md:border-b-0 md:border-r border-m3-outlineVariant flex flex-col shrink-0 max-h-[38vh] md:max-h-none">
+      <!-- Expressive Pill Tab Bar -->
+      <div class="p-2 border-b border-m3-outlineVariant grid grid-cols-5 gap-1 bg-m3-bg/60 shrink-0">
+        <button onclick="switchLeftTab('media')" id="tabBtn-media"
+          class="m3-btn py-1.5 px-1 rounded-m3-md bg-m3-primary text-m3-onPrimary flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold">
+          <span class="material-symbols-rounded text-[18px]">video_library</span>
+          <span>Medien</span>
+        </button>
+        <button onclick="switchLeftTab('text')" id="tabBtn-text"
+          class="m3-btn py-1.5 px-1 rounded-m3-md text-m3-onSurfaceVariant hover:bg-m3-container hover:text-white flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold">
+          <span class="material-symbols-rounded text-[18px]">title</span>
+          <span>Text</span>
+        </button>
+        <button onclick="switchLeftTab('scenes')" id="tabBtn-scenes"
+          class="m3-btn py-1.5 px-1 rounded-m3-md text-m3-onSurfaceVariant hover:bg-m3-container hover:text-white flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold">
+          <span class="material-symbols-rounded text-[18px]">smartphone</span>
+          <span>Handy</span>
+        </button>
+        <button onclick="switchLeftTab('music')" id="tabBtn-music"
+          class="m3-btn py-1.5 px-1 rounded-m3-md text-m3-onSurfaceVariant hover:bg-m3-container hover:text-white flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold">
+          <span class="material-symbols-rounded text-[18px]">music_note</span>
+          <span>Musik</span>
+        </button>
+        <button onclick="switchLeftTab('configs')" id="tabBtn-configs"
+          class="m3-btn py-1.5 px-1 rounded-m3-md text-m3-onSurfaceVariant hover:bg-m3-container hover:text-white flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold">
+          <span class="material-symbols-rounded text-[18px]">tune</span>
+          <span>Configs</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: MEDIATHEK -->
+      <div id="panelMedia" class="flex-1 flex flex-col p-3 gap-3 overflow-y-auto">
+        <div id="dropZone"
+          ondragover="event.preventDefault(); this.classList.add('border-white', 'bg-m3-containerHigh')"
+          ondragleave="this.classList.remove('border-white', 'bg-m3-containerHigh')"
+          ondrop="event.preventDefault(); this.classList.remove('border-white', 'bg-m3-containerHigh'); handleFiles(event.dataTransfer.files)"
+          onclick="document.getElementById('mediaFileInput').click()"
+          class="cursor-pointer border-2 border-dashed border-m3-outline hover:border-white rounded-m3-lg p-4 text-center bg-m3-container/50 hover:bg-m3-container transition-all">
+          <span class="material-symbols-rounded text-[28px] text-white mb-1">upload_file</span>
+          <div class="text-xs font-display font-bold text-white">Videos & Bilder importieren</div>
+          <p class="text-[11px] text-m3-onSurfaceVariant mt-0.5">Klicken oder Dateien hierher ziehen (.mp4, .webm, .png, .jpg)</p>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-m3-onSurfaceVariant">Mediathek (<span id="mediaCount">0</span>)</span>
+          <button onclick="createProceduralDemoClips(false)" class="text-[11px] text-m3-secondary hover:text-white underline">
+            + Demo-Clips
+          </button>
+        </div>
+
+        <div id="mediaGrid" class="grid grid-cols-2 gap-2"></div>
+      </div>
+
+      <!-- TAB 2: TEXT & CUSTOM FONTS -->
+      <div id="panelText" class="hidden flex-1 flex-col p-3 gap-3 overflow-y-auto">
+        <div class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">add_box</span>
+            Text- & MD3-Pill-Vorlagen
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="addTextOverlay('headline')"
+              class="m3-btn p-2.5 rounded-m3-md bg-m3-containerHigh hover:bg-m3-primary hover:text-m3-onPrimary text-left border border-m3-outlineVariant">
+              <div class="text-xs font-display font-extrabold">Titel / Headline</div>
+              <div class="text-[10px] opacity-75">Groß & kontrastreich</div>
+            </button>
+            <button onclick="addTextOverlay('pillLight')"
+              class="m3-btn p-2.5 rounded-m3-md bg-m3-containerHigh hover:bg-m3-primary hover:text-m3-onPrimary text-left border border-m3-outlineVariant">
+              <div class="text-xs font-display font-bold">MD3 Pill Hell</div>
+              <div class="text-[10px] opacity-75">Hellgraues Badge</div>
+            </button>
+            <button onclick="addTextOverlay('pillDark')"
+              class="m3-btn p-2.5 rounded-m3-md bg-m3-containerHigh hover:bg-m3-primary hover:text-m3-onPrimary text-left border border-m3-outlineVariant">
+              <div class="text-xs font-display font-bold">MD3 Pill Dunkel</div>
+              <div class="text-[10px] opacity-75">Dunkelgrau + Rahmen</div>
+            </button>
+            <button onclick="addTextOverlay('subtitle')"
+              class="m3-btn p-2.5 rounded-m3-md bg-m3-containerHigh hover:bg-m3-primary hover:text-m3-onPrimary text-left border border-m3-outlineVariant">
+              <div class="text-xs font-display font-bold">Untertitel</div>
+              <div class="text-[10px] opacity-75">Unten zentriert</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Font Manager -->
+        <div class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">font_download</span>
+            Eigene Schriftarten (Fonts)
+          </div>
+          <p class="text-[10px] text-m3-onSurfaceVariant">
+            Lade <code>.ttf</code> / <code>.otf</code> / <code>.woff2</code> hoch oder hinterlege einen relativen Hosting-Pfad (z. B. <code>./fonts/MeineFont.woff2</code>).
+          </p>
+
+          <label for="fontFileInput"
+            class="m3-btn cursor-pointer w-full py-2 px-3 rounded-pill bg-m3-containerHighest hover:bg-m3-primary hover:text-m3-onPrimary text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-m3-outline">
+            <span class="material-symbols-rounded text-[16px]">upload</span>
+            <span>Font-Datei hochladen</span>
+          </label>
+          <input id="fontFileInput" type="file" accept=".ttf,.otf,.woff,.woff2" class="hidden" onchange="handleFontFileUpload(this.files)" />
+
+          <div class="pt-1 border-t border-m3-outlineVariant space-y-1.5">
+            <input id="customFontNameInput" type="text" placeholder="Font-Name (z. B. ClashDisplay)"
+              class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white focus:border-white focus:outline-none" />
+            <div class="flex gap-1.5">
+              <input id="customFontUrlInput" type="text" placeholder="./fonts/MeineFont.woff2"
+                class="flex-1 px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs font-mono text-white focus:border-white focus:outline-none" />
+              <button onclick="registerFontFromUrl()"
+                class="m3-btn px-3 py-1.5 rounded-m3-sm bg-m3-primary text-m3-onPrimary text-xs font-bold shrink-0">
+                Laden
+              </button>
+            </div>
+          </div>
+
+          <div id="registeredFontsList" class="space-y-1 max-h-28 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: SZENEN & HANDY CUTOUT -->
+      <div id="panelScenes" class="hidden flex-1 flex-col p-3 gap-3 overflow-y-auto">
+        <div class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">smartphone</span>
+            Handy-Cutout & Geräteszenen
+          </div>
+          <p class="text-[11px] text-m3-onSurfaceVariant">
+            Erstellt eine dunkelgraue Studio-Szene mit Smartphone-Cutout. Du kannst Videos oder Bilder direkt ins Handy einsetzen, es frei verschieben und in der Timeline beliebig verlängern.
+          </p>
+
+          <div class="grid grid-cols-1 gap-2">
+            <button onclick="addPhoneScene('phone')"
+              class="m3-btn p-3 rounded-m3-md bg-m3-primary hover:bg-white text-m3-onPrimary text-left flex items-center justify-between shadow">
+              <div>
+                <div class="text-xs font-display font-extrabold">+ Handy-Szene (Hochformat 9:19.5)</div>
+                <div class="text-[10px] opacity-80">Dunkelgrauer Hintergrund + Smartphone-Cutout</div>
+              </div>
+              <span class="material-symbols-rounded icon-filled text-[22px]">smartphone</span>
+            </button>
+
+            <button onclick="addPhoneScene('phoneLandscape')"
+              class="m3-btn p-2.5 rounded-m3-md bg-m3-containerHigh hover:bg-m3-containerHighest text-white text-left flex items-center justify-between border border-m3-outlineVariant">
+              <div>
+                <div class="text-xs font-display font-bold">+ Handy Querformat (19.5:9)</div>
+                <div class="text-[10px] text-m3-onSurfaceVariant">Ideal für Mobile-Gaming & App-Demos</div>
+              </div>
+              <span class="material-symbols-rounded text-[20px]">stay_current_landscape</span>
+            </button>
+
+            <button onclick="addPhoneScene('tablet')"
+              class="m3-btn p-2.5 rounded-m3-md bg-m3-containerHigh hover:bg-m3-containerHighest text-white text-left flex items-center justify-between border border-m3-outlineVariant">
+              <div>
+                <div class="text-xs font-display font-bold">+ Tablet-Cutout (4:3)</div>
+                <div class="text-[10px] text-m3-onSurfaceVariant">Großes Display-Frame auf Studio-Grau</div>
+              </div>
+              <span class="material-symbols-rounded text-[20px]">tablet_mac</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: MUSIK-BIBLIOTHEK (GITHUB /msk/ ORDNER + UPLOAD) -->
+      <div id="panelMusic" class="hidden flex-1 flex-col p-3 gap-3 overflow-y-auto">
+        <div class="bg-m3-container p-3 rounded-m3-md border border-m3-outlineVariant flex items-center justify-between gap-2">
+          <div>
+            <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+              <span class="material-symbols-rounded text-[16px]">folder_open</span>
+              GitHub-Ordner: <code class="font-mono text-[11px] bg-m3-bg px-1.5 py-0.5 rounded">/msk/</code>
+            </div>
+            <p class="text-[10px] text-m3-onSurfaceVariant mt-0.5">Lädt MP3-Tracks direkt aus <code>Cr4xx0Dev/MonoCut/msk</code>.</p>
+          </div>
+          <button onclick="discoverRepoAssets(true)" class="m3-btn w-8 h-8 rounded-full bg-m3-containerHigh hover:bg-m3-primary hover:text-m3-onPrimary text-white flex items-center justify-center shrink-0" title="GitHub /msk & /config neu laden">
+            <span class="material-symbols-rounded text-[17px]">refresh</span>
+          </button>
+        </div>
+
+        <label for="audioFileInput"
+          class="m3-btn cursor-pointer w-full py-2 px-3 rounded-pill bg-m3-containerHigh hover:bg-m3-primary hover:text-m3-onPrimary text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-m3-outline">
+          <span class="material-symbols-rounded text-[17px]">library_music</span>
+          <span>Eigene Musik (.mp3 / .wav) laden</span>
+        </label>
+        <input id="audioFileInput" type="file" accept="audio/*" multiple class="hidden" onchange="handleAudioUpload(this.files)" />
+
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-m3-onSurfaceVariant">Verfügbare Tracks (<span id="musicCount">0</span>)</span>
+        </div>
+
+        <div id="musicList" class="space-y-2"></div>
+      </div>
+
+      <!-- TAB 5: CONFIGS (PROJEKT-GEHIRN SPEICHERN / LADEN / GITHUB /config/) -->
+      <div id="panelConfigs" class="hidden flex-1 flex-col p-3 gap-3 overflow-y-auto">
+        <!-- Speichern / Exportieren -->
+        <div class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">psychology</span>
+            Projekt-Config („Gehirn“) speichern
+          </div>
+          <p class="text-[10px] text-m3-onSurfaceVariant">
+            Speichert Spuren, Texte, Pill-Farben, Handy-Positionen, Animationen & Musik-Pfade als schlanke JSON-Datei (ohne Videodateien).
+          </p>
+          <input id="configNameInput" type="text" placeholder="Config-Name (z. B. TikTok_Handy_Setup)"
+            class="w-full px-3 py-2 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white focus:border-white focus:outline-none" />
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="saveConfigToBrowser()"
+              class="m3-btn py-2 px-2.5 rounded-pill bg-m3-containerHighest hover:bg-white hover:text-black text-white text-[11px] font-bold flex items-center justify-center gap-1 border border-m3-outline">
+              <span class="material-symbols-rounded text-[15px]">bookmark_add</span>
+              <span>Im Browser</span>
+            </button>
+            <button onclick="exportConfigJsonFile()"
+              class="m3-btn py-2 px-2.5 rounded-pill bg-m3-primary hover:bg-white text-m3-onPrimary text-[11px] font-bold flex items-center justify-center gap-1">
+              <span class="material-symbols-rounded text-[15px]">download</span>
+              <span>.JSON Export</span>
+            </button>
+          </div>
+          <label for="configImportInput"
+            class="m3-btn cursor-pointer w-full py-1.5 px-3 rounded-pill bg-m3-bg hover:bg-m3-containerHigh text-m3-secondary hover:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 border border-m3-outlineVariant">
+            <span class="material-symbols-rounded text-[15px]">upload_file</span>
+            <span>.JSON Config importieren</span>
+          </label>
+          <input id="configImportInput" type="file" accept=".json,application/json" class="hidden" onchange="importConfigJsonFile(this.files[0])" />
+        </div>
+
+        <!-- Repo Configs aus Cr4xx0Dev/MonoCut/config -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-m3-onSurfaceVariant">GitHub /config/ Vorlagen</span>
+            <button onclick="discoverRepoAssets(true)" class="text-[10px] text-m3-secondary hover:text-white underline">Aktualisieren</button>
+          </div>
+          <div id="repoConfigsList" class="space-y-1.5"></div>
+        </div>
+
+        <!-- Lokal im Browser gespeicherte Configs -->
+        <div class="space-y-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-m3-onSurfaceVariant">Gespeicherte Configs</span>
+          <div id="savedConfigsList" class="space-y-1.5"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER STAGE: VIDEO PREVIEW CANVAS & TRANSPORT CONTROLS -->
+    <section class="flex-1 flex flex-col min-w-0 min-h-0 bg-m3-bg">
+      <!-- Relink Banner falls eine Config geladene Medien sucht -->
+      <div id="missingMediaBanner" class="hidden bg-m3-containerHigh border-b border-m3-outline px-4 py-2 flex items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 text-white">
+          <span class="material-symbols-rounded text-[18px]">link_off</span>
+          <span id="missingMediaText">Diese Config enthält Platzhalter-Clips. Verknüpfe deine Videos/Bilder:</span>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <label for="relinkMediaInput" class="m3-btn cursor-pointer px-3 py-1 rounded-pill bg-m3-primary text-m3-onPrimary font-bold text-[11px]">
+            Videos/Bilder zuweisen
+          </label>
+          <input id="relinkMediaInput" type="file" accept="video/*,image/*" multiple class="hidden" onchange="relinkMissingMedia(this.files)" />
+          <button onclick="document.getElementById('missingMediaBanner').classList.add('hidden')" class="text-m3-onSurfaceVariant hover:text-white">
+            <span class="material-symbols-rounded text-[18px]">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas Container -->
+      <div id="canvasViewport" class="flex-1 flex items-center justify-center p-3 md:p-6 min-h-0 overflow-hidden relative">
+        <div id="canvasWrapper" class="relative shadow-2xl rounded-m3-lg overflow-hidden border border-m3-outlineVariant bg-[#141414] flex items-center justify-center">
+          <canvas id="previewCanvas" class="block w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+        </div>
+      </div>
+
+      <!-- Expressive Transport Bar -->
+      <div class="h-14 px-3 md:px-5 bg-m3-containerLow border-t border-m3-outlineVariant flex items-center justify-between gap-2 shrink-0">
+        <!-- Timecode -->
+        <div class="flex items-center gap-1.5 font-mono text-xs bg-m3-container px-3 py-1.5 rounded-pill border border-m3-outlineVariant">
+          <span id="currentTimeDisplay" class="text-white font-bold">00:00.0</span>
+          <span class="text-m3-onSurfaceVariant">/</span>
+          <span id="totalDurationDisplay" class="text-m3-onSurfaceVariant">00:08.0</span>
+        </div>
+
+        <!-- Playback Buttons -->
+        <div class="flex items-center gap-2">
+          <button onclick="seekTo(0)" class="m3-btn w-9 h-9 rounded-full bg-m3-container hover:bg-m3-containerHigh text-white flex items-center justify-center" title="Zum Anfang">
+            <span class="material-symbols-rounded text-[20px]">skip_previous</span>
+          </button>
+
+          <button onclick="togglePlay()" id="playPauseBtn"
+            class="m3-btn w-11 h-11 rounded-full bg-m3-primary hover:bg-white text-m3-onPrimary flex items-center justify-center shadow-lg" title="Abspielen / Pause (Leertaste)">
+            <span id="playPauseIcon" class="material-symbols-rounded icon-filled text-[24px]">play_arrow</span>
+          </button>
+
+          <button onclick="splitSelectedAtPlayhead()" class="m3-btn px-3 h-9 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-xs font-semibold flex items-center gap-1" title="Clip am Playhead teilen (S)">
+            <span class="material-symbols-rounded text-[17px]">content_cut</span>
+            <span class="hidden sm:inline">Split</span>
+          </button>
+        </div>
+
+        <!-- Master Volume & Mobile Aspect Switch -->
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-rounded text-[18px] text-m3-onSurfaceVariant hidden sm:inline">volume_up</span>
+          <input id="masterVolume" type="range" min="0" max="1" step="0.05" value="0.85" class="w-16 md:w-24 hidden sm:block" title="Gesamtlautstärke" />
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT DOCK: CONTEXTUAL INSPECTOR (ANIMATIONEN, HANDY-CUTOUT, TEXT-FARBEN, AUDIO) -->
+    <aside class="w-full md:w-[310px] lg:w-[340px] bg-m3-containerLow border-t md:border-t-0 md:border-l border-m3-outlineVariant flex flex-col shrink-0 max-h-[36vh] md:max-h-none overflow-y-auto">
+      <div class="p-3 border-b border-m3-outlineVariant flex items-center justify-between bg-m3-bg/50 shrink-0">
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-rounded text-[18px] text-white">sliders</span>
+          <span class="text-xs font-display font-bold uppercase tracking-wider text-white">Inspektor</span>
+        </div>
+        <button id="deleteClipBtn" onclick="deleteSelectedItem()" class="hidden m3-btn px-2.5 py-1 rounded-pill bg-m3-containerHigh hover:bg-white hover:text-black text-m3-secondary text-[11px] font-semibold flex items-center gap-1">
+          <span class="material-symbols-rounded text-[14px]">delete</span>
+          <span>Löschen</span>
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div id="inspectorEmpty" class="flex-1 flex flex-col items-center justify-center p-6 text-center text-m3-onSurfaceVariant">
+        <span class="material-symbols-rounded text-[36px] mb-2 opacity-50">touch_app</span>
+        <div class="text-xs font-display font-bold text-white mb-1">Kein Element ausgewählt</div>
+        <p class="text-[11px]">Klicke auf einen Clip, Text, Musik-Balken oder eine Handy-Szene in der Timeline, um Animationen und Stil anzupassen.</p>
+      </div>
+
+      <!-- Active Clip Inspector -->
+      <div id="inspectorContent" class="hidden p-3 space-y-3.5">
+        <!-- Basis: Name & Timing -->
+        <div class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <input id="inspName" type="text" oninput="updateSelectedClipProp('name', this.value)"
+            class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs font-bold text-white focus:border-white focus:outline-none" />
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Start (Sek.)</label>
+              <input id="inspStart" type="number" step="0.1" min="0" oninput="updateSelectedClipProp('startTime', Math.max(0, parseFloat(this.value)||0))"
+                class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs font-mono text-white" />
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Dauer (Sek.)</label>
+              <input id="inspDuration" type="number" step="0.1" min="0.2" oninput="updateSelectedClipProp('duration', Math.max(0.2, parseFloat(this.value)||1))"
+                class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs font-mono text-white" />
+            </div>
+          </div>
+        </div>
+
+        <!-- HANDY-SZENE / CUTOUT SETTINGS -->
+        <div id="inspSceneSection" class="hidden bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">smartphone</span>
+            Handy-Cutout & Inhalt
+          </div>
+
+          <div>
+            <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Video oder Bild im Handy-Screen</label>
+            <select id="inspSceneMediaSelect" onchange="updateSelectedClipProp('sceneMediaId', this.value)"
+              class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white focus:outline-none">
+              <option value="">Animiertes Monochrome-Mockup</option>
+            </select>
+            <label for="sceneDirectMediaInput"
+              class="mt-1.5 m3-btn cursor-pointer w-full py-1.5 px-2.5 rounded-pill bg-m3-containerHighest hover:bg-white hover:text-black text-white text-[11px] font-semibold flex items-center justify-center gap-1 border border-m3-outline">
+              <span class="material-symbols-rounded text-[15px]">upload</span>
+              <span>Video/Bild direkt ins Handy laden</span>
+            </label>
+            <input id="sceneDirectMediaInput" type="file" accept="video/*,image/*" class="hidden" onchange="handleDirectSceneMediaUpload(this.files[0])" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Geräte-Form</label>
+              <select id="inspDeviceType" onchange="updateSelectedClipProp('deviceType', this.value)"
+                class="w-full px-2 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white">
+                <option value="phone">Handy (9:19.5)</option>
+                <option value="phoneLandscape">Handy Quer</option>
+                <option value="tablet">Tablet (4:3)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Hintergrund-Grau</label>
+              <select id="inspSceneBgColor" onchange="updateSelectedClipProp('bgColor', this.value)"
+                class="w-full px-2 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white">
+                <option value="#1A1A1A">Studio Dunkelgrau (#1A1A1A)</option>
+                <option value="#262626">Mittel-Dunkelgrau (#262626)</option>
+                <option value="#3A3A3A">Graphitgrau (#3A3A3A)</option>
+                <option value="#0D0D0D">Tiefschwarz (#0D0D0D)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-1.5 text-[11px] text-white cursor-pointer">
+              <input id="inspSceneShowBg" type="checkbox" checked onchange="updateSelectedClipProp('showBg', this.checked)" class="accent-white" />
+              <span>Hintergrund füllen</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-[11px] text-white cursor-pointer">
+              <input id="inspSceneShowNotch" type="checkbox" checked onchange="updateSelectedClipProp('showNotch', this.checked)" class="accent-white" />
+              <span>Dynamic Island</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- TEXT & MONOCHROME MD3 PILL STYLING -->
+        <div id="inspTextSection" class="hidden bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-3">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">text_fields</span>
+            Text & Schriftart
+          </div>
+
+          <textarea id="inspTextContent" rows="2" oninput="updateSelectedClipProp('text', this.value)"
+            class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white focus:border-white focus:outline-none"></textarea>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Schriftart</label>
+              <select id="inspFontFamily" onchange="updateSelectedClipProp('fontFamily', this.value)"
+                class="w-full px-2 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white"></select>
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Größe (<span id="inspFontSizeVal">48</span>px)</label>
+              <input id="inspFontSize" type="range" min="16" max="140" value="48"
+                oninput="document.getElementById('inspFontSizeVal').textContent=this.value; updateSelectedClipProp('fontSize', parseInt(this.value))"
+                class="w-full mt-2" />
+            </div>
+          </div>
+
+          <!-- MONOCHROME FARBEN (WEISS, HELLGRAU, MITTELGRAU, DUNKELGRAU #3A3A3A, SCHWARZ #050505) -->
+          <div class="pt-2 border-t border-m3-outlineVariant space-y-2.5">
+            <span class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+              <span class="material-symbols-rounded text-[17px]">palette</span>
+              Monochrome Text- & Pill-Farben
+            </span>
+
+            <div>
+              <div class="flex justify-between text-[10px] text-m3-onSurfaceVariant mb-1">
+                <span>Schriftfarbe</span>
+                <span id="inspTextColorLabel" class="font-mono text-white">Weiß (#FFFFFF)</span>
+              </div>
+              <div id="textColorSwatches" class="grid grid-cols-5 gap-1.5"></div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[10px] text-m3-onSurfaceVariant mb-1">
+                <span>MD3 Pill / Hintergrund</span>
+                <span id="inspPillBgLabel" class="font-mono text-white">Transparent</span>
+              </div>
+              <div id="pillBgSwatches" class="grid grid-cols-6 gap-1.5"></div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[10px] text-m3-onSurfaceVariant mb-1">
+                <span>Pill-Rahmen (Outline)</span>
+                <span id="inspPillBorderLabel" class="font-mono text-white">Keiner</span>
+              </div>
+              <div id="pillBorderSwatches" class="grid grid-cols-6 gap-1.5"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div>
+                <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Eckenradius (<span id="inspPillRadiusVal">100</span>)</label>
+                <input id="inspPillRadius" type="range" min="0" max="100" value="100"
+                  oninput="document.getElementById('inspPillRadiusVal').textContent=this.value; updateSelectedClipProp('pillRadius', parseInt(this.value))"
+                  class="w-full" />
+              </div>
+              <div>
+                <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Innenabstand (<span id="inspPillPadVal">1.0</span>x)</label>
+                <input id="inspPillPad" type="range" min="0.4" max="2.2" step="0.1" value="1.0"
+                  oninput="document.getElementById('inspPillPadVal').textContent=this.value; updateSelectedClipProp('pillPadding', parseFloat(this.value))"
+                  class="w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- POSITION, GRÖSSE & DREHUNG (FÜR VIDEOS, HANDY & TEXT) -->
+        <div id="inspTransformSection" class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+              <span class="material-symbols-rounded text-[17px]">open_with</span>
+              Position & Größe
+            </span>
+            <button onclick="resetSelectedTransform()" class="text-[10px] text-m3-secondary hover:text-white underline">Zentrieren</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant flex justify-between">
+                <span>X (Links/Rechts)</span><span id="inspXVal" class="font-mono text-white">0%</span>
+              </label>
+              <input id="inspX" type="range" min="-60" max="60" step="1" value="0"
+                oninput="document.getElementById('inspXVal').textContent=this.value+'%'; updateSelectedClipProp('x', parseFloat(this.value))"
+                class="w-full mt-1" />
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant flex justify-between">
+                <span>Y (Hoch/Runter)</span><span id="inspYVal" class="font-mono text-white">0%</span>
+              </label>
+              <input id="inspY" type="range" min="-60" max="60" step="1" value="0"
+                oninput="document.getElementById('inspYVal').textContent=this.value+'%'; updateSelectedClipProp('y', parseFloat(this.value))"
+                class="w-full mt-1" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant flex justify-between">
+                <span>Skalierung</span><span id="inspScaleVal" class="font-mono text-white">100%</span>
+              </label>
+              <input id="inspScale" type="range" min="0.2" max="2.2" step="0.05" value="1"
+                oninput="document.getElementById('inspScaleVal').textContent=Math.round(this.value*100)+'%'; updateSelectedClipProp('scale', parseFloat(this.value))"
+                class="w-full mt-1" />
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant flex justify-between">
+                <span>Drehung</span><span id="inspRotVal" class="font-mono text-white">0°</span>
+              </label>
+              <input id="inspRot" type="range" min="-45" max="45" step="1" value="0"
+                oninput="document.getElementById('inspRotVal').textContent=this.value+'°'; updateSelectedClipProp('rotation', parseFloat(this.value))"
+                class="w-full mt-1" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SCHNITT- & BEWEGUNGS-ANIMATIONEN -->
+        <div id="inspAnimSection" class="bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">animation</span>
+            Animationen & Übergänge
+          </div>
+
+          <div>
+            <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Eingangs-Animation (Schnitt-In)</label>
+            <select id="inspAnimIn" onchange="updateSelectedClipProp('animIn', this.value)"
+              class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white">
+              <option value="none">Keine (Harter Schnitt)</option>
+              <option value="fade">Fade In (Weich einblenden)</option>
+              <option value="dissolve">Cross-Dissolve</option>
+              <option value="slideUp">Slide Up (Von unten)</option>
+              <option value="slideDown">Slide Down (Von oben)</option>
+              <option value="slideLeft">Slide Left (Von rechts)</option>
+              <option value="slideRight">Slide Right (Von links)</option>
+              <option value="zoomIn">Zoom In (Heranzoomen)</option>
+              <option value="zoomOut">Zoom Out (Herauszoomen)</option>
+              <option value="popBounce">M3 Expressive Pop / Bounce</option>
+              <option value="blurFade">Blur-Fade (Unschärfe)</option>
+              <option value="wipeRight">Wipe Reveal (Wischen)</option>
+              <option value="rotateIn">Rotate & Scale In</option>
+              <option value="glitch">Monochrome Glitch</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Ausgangs-Animation (Schnitt-Out)</label>
+            <select id="inspAnimOut" onchange="updateSelectedClipProp('animOut', this.value)"
+              class="w-full px-2.5 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white">
+              <option value="none">Keine (Harter Schnitt)</option>
+              <option value="fade">Fade Out (Ausblenden)</option>
+              <option value="slideUp">Slide Up (Nach oben)</option>
+              <option value="slideDown">Slide Down (Nach unten)</option>
+              <option value="slideLeft">Slide Left (Nach links)</option>
+              <option value="slideRight">Slide Right (Nach rechts)</option>
+              <option value="zoomIn">Zoom In</option>
+              <option value="zoomOut">Zoom Out</option>
+              <option value="blurFade">Blur-Fade Out</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Dauer-Bewegung</label>
+              <select id="inspAnimLoop" onchange="updateSelectedClipProp('animLoop', this.value)"
+                class="w-full px-2 py-1.5 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs text-white">
+                <option value="none">Statisch</option>
+                <option value="float">Sanftes Schweben</option>
+                <option value="pulse">Subtiler Puls</option>
+                <option value="sway">3D-Neigen (Sway)</option>
+                <option value="kenBurns">Slow Zoom (Ken Burns)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Tempo (<span id="inspAnimDurVal">0.6</span>s)</label>
+              <input id="inspAnimDur" type="range" min="0.15" max="2.5" step="0.05" value="0.6"
+                oninput="document.getElementById('inspAnimDurVal').textContent=this.value; updateSelectedClipProp('animDuration', parseFloat(this.value))"
+                class="w-full mt-2" />
+            </div>
+          </div>
+        </div>
+
+        <!-- AUDIO-EINSTELLUNGEN FÜR MUSIK-BALKEN -->
+        <div id="inspAudioSection" class="hidden bg-m3-container p-3 rounded-m3-lg border border-m3-outlineVariant space-y-2.5">
+          <div class="text-xs font-display font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-[17px]">graphic_eq</span>
+            Musik-Pegel & Fades
+          </div>
+          <div>
+            <label class="text-[10px] text-m3-onSurfaceVariant flex justify-between">
+              <span>Lautstärke</span><span id="inspVolVal" class="font-mono text-white">80%</span>
+            </label>
+            <input id="inspVol" type="range" min="0" max="1" step="0.05" value="0.8"
+              oninput="document.getElementById('inspVolVal').textContent=Math.round(this.value*100)+'%'; updateSelectedClipProp('volume', parseFloat(this.value))"
+              class="w-full mt-1" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Fade-In (Sek.)</label>
+              <input id="inspFadeIn" type="number" step="0.1" min="0" max="10" value="0.5"
+                oninput="updateSelectedClipProp('fadeIn', parseFloat(this.value)||0)"
+                class="w-full px-2 py-1 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs font-mono text-white" />
+            </div>
+            <div>
+              <label class="text-[10px] text-m3-onSurfaceVariant block mb-1">Fade-Out (Sek.)</label>
+              <input id="inspFadeOut" type="number" step="0.1" min="0" max="10" value="1.0"
+                oninput="updateSelectedClipProp('fadeOut', parseFloat(this.value)||0)"
+                class="w-full px-2 py-1 rounded-m3-sm bg-m3-bg border border-m3-outline text-xs font-mono text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- BOTTOM MULTI-TRACK TIMELINE (UNLIMITED TRACKS + MAGNETIC SNAPPING)    -->
+  <!-- ===================================================================== -->
+  <section class="h-[245px] md:h-[265px] bg-m3-containerLow border-t border-m3-outlineVariant flex flex-col shrink-0 z-20">
+    <!-- Timeline Toolbar: Add Tracks & Snap Toggle -->
+    <div class="h-10 px-3 bg-m3-bg border-b border-m3-outlineVariant flex items-center justify-between gap-2 shrink-0 overflow-x-auto">
+      <div class="flex items-center gap-1.5 shrink-0">
+        <span class="text-[11px] font-display font-bold text-m3-onSurfaceVariant mr-1 hidden sm:inline">Spuren:</span>
+        <button onclick="addTrack('video')" class="m3-btn px-2.5 py-1 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-[11px] font-semibold flex items-center gap-1">
+          <span class="material-symbols-rounded text-[14px]">add</span><span>Video-Balken</span>
+        </button>
+        <button onclick="addTrack('text')" class="m3-btn px-2.5 py-1 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-[11px] font-semibold flex items-center gap-1">
+          <span class="material-symbols-rounded text-[14px]">add</span><span>Text-Balken</span>
+        </button>
+        <button onclick="addTrack('scene')" class="m3-btn px-2.5 py-1 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-[11px] font-semibold flex items-center gap-1">
+          <span class="material-symbols-rounded text-[14px]">add</span><span>Handy-Balken</span>
+        </button>
+        <button onclick="addTrack('audio')" class="m3-btn px-2.5 py-1 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white border border-m3-outlineVariant text-[11px] font-semibold flex items-center gap-1">
+          <span class="material-symbols-rounded text-[14px]">add</span><span>Musik-Balken</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="snapToggleBtn" onclick="toggleSnapping()"
+          class="m3-btn px-2.5 py-1 rounded-pill bg-m3-primary text-m3-onPrimary text-[11px] font-bold flex items-center gap-1"
+          title="Magnetisches Einrasten an Clips & Playhead">
+          <span class="material-symbols-rounded icon-filled text-[14px]">straighten</span>
+          <span>Snap: AN</span>
+        </button>
+
+        <div class="flex items-center gap-1 bg-m3-container px-2 py-0.5 rounded-pill border border-m3-outlineVariant">
+          <span class="material-symbols-rounded text-[14px] text-m3-onSurfaceVariant">zoom_out</span>
+          <input id="timelineZoom" type="range" min="30" max="180" value="75" oninput="setTimelineZoom(this.value)" class="w-16 md:w-24" />
+          <span class="material-symbols-rounded text-[14px] text-m3-onSurfaceVariant">zoom_in</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Tracks & Ruler -->
+    <div id="timelineScrollArea" class="flex-1 overflow-auto relative bg-[#161616]">
+      <div id="timelineInner" class="relative min-w-full">
+        <!-- Time Ruler -->
+        <div class="sticky top-0 z-20 flex h-7 bg-m3-containerLow border-b border-m3-outlineVariant">
+          <div class="w-36 md:w-44 shrink-0 border-r border-m3-outlineVariant px-3 flex items-center text-[10px] font-mono text-m3-onSurfaceVariant bg-m3-containerLow sticky left-0 z-30">
+            TIMELINE
+          </div>
+          <div id="timeRuler" class="relative flex-1 h-full cursor-pointer"></div>
+        </div>
+
+        <!-- Tracks Container -->
+        <div id="tracksContainer" class="relative divide-y divide-m3-outlineVariant"></div>
+
+        <!-- Snap Guide Line -->
+        <div id="snapGuideLine" class="hidden pointer-events-none absolute top-0 bottom-0 w-[1.5px] bg-white/80 z-30"></div>
+
+        <!-- Playhead Needle -->
+        <div id="playhead" class="pointer-events-none absolute top-0 bottom-0 z-30" style="left: 176px;">
+          <div class="w-3.5 h-3.5 -ml-[6px] bg-white rounded-b-sm shadow-md"></div>
+          <div class="w-[2px] h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MP4 EXPORT MODAL                                                      -->
+  <!-- ===================================================================== -->
+  <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-m3-containerLow border border-m3-outline rounded-m3-xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-full bg-m3-primary text-m3-onPrimary flex items-center justify-center">
+            <span class="material-symbols-rounded icon-filled text-[20px]">movie</span>
+          </div>
+          <div>
+            <h3 class="font-display font-extrabold text-base text-white">Video als MP4 exportieren</h3>
+            <p class="text-[11px] text-m3-onSurfaceVariant">Exakte Länge: <span id="exportExactDuration" class="font-mono text-white">00:08.0</span></p>
+          </div>
+        </div>
+        <button id="closeExportModalBtn" onclick="closeExportModal()" class="w-8 h-8 rounded-full hover:bg-m3-containerHigh text-m3-onSurfaceVariant hover:text-white flex items-center justify-center">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] text-m3-onSurfaceVariant block mb-1">Auflösung</label>
+          <select id="exportRes" class="w-full px-3 py-2 rounded-m3-md bg-m3-container border border-m3-outline text-xs text-white">
+            <option value="720">720p HD (Schnell)</option>
+            <option value="1080" selected>1080p Full HD</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[11px] text-m3-onSurfaceVariant block mb-1">Bildrate (FPS)</label>
+          <select id="exportFps" class="w-full px-3 py-2 rounded-m3-md bg-m3-container border border-m3-outline text-xs text-white">
+            <option value="30" selected>30 FPS</option>
+            <option value="60">60 FPS</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div id="exportProgressWrap" class="hidden space-y-1.5 bg-m3-container p-3 rounded-m3-md border border-m3-outlineVariant">
+        <div class="flex justify-between text-xs">
+          <span id="exportStatusText" class="text-white font-semibold">Rendere Frames...</span>
+          <span id="exportPercentText" class="font-mono text-white font-bold">0%</span>
+        </div>
+        <div class="w-full h-2.5 bg-m3-bg rounded-pill overflow-hidden">
+          <div id="exportProgressBar" class="h-full bg-white transition-all duration-100" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-1">
+        <button id="cancelExportBtn" onclick="closeExportModal()" class="m3-btn px-4 py-2 rounded-pill bg-m3-container hover:bg-m3-containerHigh text-white text-xs font-semibold">
+          Abbrechen
+        </button>
+        <button id="startExportBtn" onclick="startMp4Export()" class="m3-btn px-5 py-2 rounded-pill bg-m3-primary hover:bg-white text-m3-onPrimary text-xs font-display font-bold flex items-center gap-1.5">
+          <span class="material-symbols-rounded icon-filled text-[17px]">download</span>
+          <span>Export starten</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SNACKBAR TOAST -->
+  <div id="snackbar" class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 opacity-0 translate-y-3 transition-all duration-200 bg-m3-primary text-m3-onPrimary px-4 py-2.5 rounded-pill shadow-2xl text-xs font-display font-bold flex items-center gap-2">
+    <span class="material-symbols-rounded icon-filled text-[17px]">check_circle</span>
+    <span id="snackbarText">Bereit</span>
+  </div>
+
+  <!-- DOM-MOUNTED HARDWARE VIDEO DECODER POOL (verhindert schwarze Frames in Chromium/Wayland) -->
+  <div id="video-decoder-pool" aria-hidden="true"
+    style="position: fixed; bottom: 0; right: 0; width: 320px; height: 180px; opacity: 0.001; pointer-events: none; z-index: -1; overflow: hidden;">
+  </div>
+
+  <!-- HEVC / H.265 AUTO-TRANSCODE OVERLAY -->
+  <div id="hevcTranscodeBanner" class="hidden fixed bottom-16 right-4 z-50 bg-m3-containerLow border border-m3-outline rounded-m3-lg p-3.5 shadow-2xl max-w-xs space-y-2">
+    <div class="flex items-center gap-2 text-xs font-display font-bold text-white">
+      <span class="material-symbols-rounded animate-spin text-[18px]">sync</span>
+      <span id="hevcTranscodeTitle">HEVC/H.265 wird konvertiert...</span>
+    </div>
+    <p id="hevcTranscodeSub" class="text-[11px] text-m3-onSurfaceVariant">Wandle H.265 in browserkompatibles Video um...</p>
+    <div class="w-full h-1.5 bg-m3-bg rounded-pill overflow-hidden">
+      <div id="hevcTranscodeBar" class="h-full bg-white transition-all duration-150" style="width: 15%;"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC                                                     -->
+  <!-- ===================================================================== -->
+  <script>
+    // ============================================================================
+    // 1. GLOBAL STATE, CANVAS & GITHUB REPOSITORY CONFIG
+    // ============================================================================
+    const GITHUB_REPO = "Cr4xx0Dev/MonoCut";
+    const GITHUB_BRANCH = "main";
+    const CUSTOM_FONTS = [];
+    const REPO_MUSIC = [];
+    const REPO_CONFIGS = [];
+
+    const MONO_PALETTE = [
+      { label: "Weiß (#FFFFFF)", short: "Weiß", hex: "#FFFFFF" },
+      { label: "Hellgrau (#D4D4D4)", short: "Hell", hex: "#D4D4D4" },
+      { label: "Mittelgrau (#787878)", short: "Mittel", hex: "#787878" },
+      { label: "Dunkelgrau (#3A3A3A)", short: "Dunkel", hex: "#3A3A3A" },
+      { label: "Tiefschwarz (#050505)", short: "Schwarz", hex: "#050505" }
+    ];
+
+    const canvas = document.getElementById("previewCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const state = {
+      aspectRatio: "16:9",
+      currentTime: 0,
+      totalDuration: 8.0,
+      isPlaying: false,
+      pxPerSec: 75,
+      snapEnabled: true,
+      selectedItemId: null,
+      tracks: [],
+      items: [],
+      mediaLibrary: [],
+      musicLibrary: [],
+      registeredFonts: ["Plus Jakarta Sans", "Inter", "JetBrains Mono"],
+      savedConfigs: [],
+      repoConfigs: []
+    };
+
+    let animFrameId = null;
+    let lastFrameTimestamp = 0;
+    let previewAudioEl = null;
+    let previewAudioId = null;
+    const activeTimelineAudioEls = new Map();
+
+    function showSnackbar(msg) {
+      const el = document.getElementById("snackbar");
+      const txt = document.getElementById("snackbarText");
+      if (!el || !txt) return;
+      txt.textContent = msg;
+      el.classList.remove("opacity-0", "translate-y-3");
+      clearTimeout(window.__snackTimer);
+      window.__snackTimer = setTimeout(() => {
+        el.classList.add("opacity-0", "translate-y-3");
+      }, 3200);
+    }
+
+    function switchLeftTab(tabName) {
+      const tabs = ["media", "text", "scenes", "music", "configs"];
+      const panels = {
+        media: "panelMedia",
+        text: "panelText",
+        scenes: "panelScenes",
+        music: "panelMusic",
+        configs: "panelConfigs"
+      };
+      tabs.forEach((t) => {
+        const btn = document.getElementById("tabBtn-" + t);
+        const panel = document.getElementById(panels[t]);
+        if (btn) {
+          btn.className =
+            t === tabName
+              ? "m3-btn py-1.5 px-1 rounded-m3-md bg-m3-primary text-m3-onPrimary flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+              : "m3-btn py-1.5 px-1 rounded-m3-md text-m3-onSurfaceVariant hover:bg-m3-container hover:text-white flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold";
+        }
+        if (panel) {
+          panel.classList.toggle("hidden", t !== tabName);
+          panel.classList.toggle("flex", t === tabName);
+        }
+      });
+    }
+
+    // ============================================================================
+    // 2. MONOCHROME SWATCHES (DUNKELGRAU #3A3A3A VS TIEFSCHWARZ #050505)
+    // ============================================================================
+    function getMonoColorLabel(hex) {
+      if (!hex || hex === "transparent") return "Transparent";
+      const found = MONO_PALETTE.find((c) => c.hex.toLowerCase() === hex.toLowerCase());
+      return found ? found.label : hex;
+    }
+
+    function buildMonochromeSwatches() {
+      const textWrap = document.getElementById("textColorSwatches");
+      const bgWrap = document.getElementById("pillBgSwatches");
+      const brdWrap = document.getElementById("pillBorderSwatches");
+      if (!textWrap || !bgWrap || !brdWrap) return;
+
+      textWrap.innerHTML = "";
+      MONO_PALETTE.forEach((c) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "m3-btn flex flex-col items-center gap-0.5 p-1 rounded-m3-sm bg-m3-bg hover:bg-m3-containerHigh border border-m3-outlineVariant";
+        btn.innerHTML = `<span class="w-5 h-5 rounded-full border border-white/40 block" style="background:${c.hex}"></span><span class="text-[9px] text-m3-onSurfaceVariant">${c.short}</span>`;
+        btn.onclick = () => updateSelectedClipProp("textColor", c.hex);
+        textWrap.appendChild(btn);
+      });
+
+      const withTransparent = [{ label: "Transparent", short: "Keine", hex: "transparent" }, ...MONO_PALETTE];
+      [
+        { wrap: bgWrap, prop: "pillBgColor" },
+        { wrap: brdWrap, prop: "pillBorderColor" }
+      ].forEach(({ wrap, prop }) => {
+        wrap.innerHTML = "";
+        withTransparent.forEach((c) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "m3-btn flex flex-col items-center gap-0.5 p-1 rounded-m3-sm bg-m3-bg hover:bg-m3-containerHigh border border-m3-outlineVariant";
+          const swatchStyle =
+            c.hex === "transparent"
+              ? "background: repeating-linear-gradient(45deg,#2a2a2a,#2a2a2a 3px,#141414 3px,#141414 6px)"
+              : `background:${c.hex}`;
+          btn.innerHTML = `<span class="w-4 h-4 rounded-full border border-white/40 block" style="${swatchStyle}"></span><span class="text-[8px] text-m3-onSurfaceVariant">${c.short}</span>`;
+          btn.onclick = () => updateSelectedClipProp(prop, c.hex);
+          wrap.appendChild(btn);
+        });
+      });
+    }
+
+    // ============================================================================
+    // 3. CUSTOM FONTS MANAGER
+    // ============================================================================
+    async function initCustomFonts() {
+      for (const f of CUSTOM_FONTS) {
+        await loadFontFace(f.name, f.url);
+      }
+      renderFontsList();
+    }
+
+    async function loadFontFace(name, url) {
+      try {
+        const face = new FontFace(name, `url(${url})`);
+        await face.load();
+        document.fonts.add(face);
+        if (!state.registeredFonts.includes(name)) state.registeredFonts.push(name);
+        renderFontsList();
+        return true;
+      } catch (e) {
+        showSnackbar(`Font "${name}" konnte nicht geladen werden`);
+        return false;
+      }
+    }
+
+    async function handleFontFileUpload(files) {
+      if (!files || !files[0]) return;
+      const file = files[0];
+      const name = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const url = URL.createObjectURL(file);
+      if (await loadFontFace(name, url)) {
+        updateSelectedClipProp("fontFamily", name);
+        showSnackbar(`Font "${name}" aktiviert`);
+      }
+    }
+
+    async function registerFontFromUrl() {
+      const name = document.getElementById("customFontNameInput").value.trim();
+      const url = document.getElementById("customFontUrlInput").value.trim();
+      if (!name || !url) return;
+      if (await loadFontFace(name, url)) {
+        updateSelectedClipProp("fontFamily", name);
+        showSnackbar(`Font "${name}" geladen`);
+      }
+    }
+
+    function renderFontsList() {
+      const sel = document.getElementById("inspFontFamily");
+      const list = document.getElementById("registeredFontsList");
+      if (sel) {
+        const cur = sel.value;
+        sel.innerHTML = state.registeredFonts.map((f) => `<option value="${f}">${f}</option>`).join("");
+        if (cur) sel.value = cur;
+      }
+      if (list) {
+        list.innerHTML = state.registeredFonts
+          .map(
+            (f) => `<div class="px-2 py-1 rounded bg-m3-bg border border-m3-outlineVariant text-[11px] text-white flex justify-between items-center">
+              <span style="font-family:'${f}',sans-serif">${f}</span>
+              <span class="text-[9px] text-m3-onSurfaceVariant">Bereit</span>
+            </div>`
+          )
+          .join("");
+      }
+    }
+
+    // ============================================================================
+    // 4. GITHUB REPO DISCOVERY (/msk & /config) + MUSIK-BIBLIOTHEK
+    // ============================================================================
+    function initMusicLibrary() {
+      state.musicLibrary = REPO_MUSIC.map((m, idx) => ({
+        id: "repo_msk_" + idx,
+        title: m.title,
+        artist: m.artist || "GitHub /msk/",
+        path: m.path,
+        duration: m.duration || 30
+      }));
+      renderMusicLibrary();
+    }
+
+    async function discoverRepoAssets(notify = false) {
+      if (!GITHUB_REPO) return;
+      try {
+        const mskRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/msk?ref=${GITHUB_BRANCH}`);
+        if (mskRes.ok) {
+          const files = await mskRes.json();
+          if (Array.isArray(files)) {
+            const audioFiles = files.filter((f) => /\.(mp3|wav|ogg|m4a)$/i.test(f.name));
+            audioFiles.forEach((f) => {
+              if (!state.musicLibrary.some((m) => m.path === f.download_url)) {
+                state.musicLibrary.push({
+                  id: "gh_msk_" + f.sha.slice(0, 8),
+                  title: f.name.replace(/\.[^.]+$/, ""),
+                  artist: "GitHub /msk/",
+                  path: f.download_url,
+                  duration: 30
+                });
+              }
+            });
+            renderMusicLibrary();
+          }
+        }
+
+        const cfgRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/config?ref=${GITHUB_BRANCH}`);
+        if (cfgRes.ok) {
+          const files = await cfgRes.json();
+          if (Array.isArray(files)) {
+            state.repoConfigs = files
+              .filter((f) => /\.json$/i.test(f.name))
+              .map((f) => ({
+                name: f.name.replace(/\.json$/i, ""),
+                url: f.download_url
+              }));
+            renderConfigsLists();
+          }
+        }
+        if (notify) showSnackbar("GitHub /msk/ & /config/ aktualisiert");
+      } catch (e) {
+        if (notify) showSnackbar("GitHub-Ordner konnten nicht abgerufen werden");
+      }
+    }
+
+    function handleAudioUpload(files) {
+      if (!files) return;
+      for (const file of files) {
+        const url = URL.createObjectURL(file);
+        const audio = new Audio(url);
+        const item = {
+          id: "loc_msk_" + Date.now() + Math.random().toString(36).substr(2, 3),
+          title: file.name.replace(/\.[^.]+$/, ""),
+          artist: "Lokale Datei",
+          path: url,
+          blobUrl: url,
+          duration: 20
+        };
+        audio.onloadedmetadata = () => {
+          if (isFinite(audio.duration) && audio.duration > 0) {
+            item.duration = audio.duration;
+            renderMusicLibrary();
+          }
+        };
+        state.musicLibrary.push(item);
+      }
+      renderMusicLibrary();
+      showSnackbar(`${files.length} Musik-Track(s) geladen`);
+    }
+
+    function togglePreviewMusic(track) {
+      if (previewAudioEl && previewAudioId === track.id) {
+        previewAudioEl.pause();
+        previewAudioEl = null;
+        previewAudioId = null;
+        renderMusicLibrary();
+        return;
+      }
+      if (previewAudioEl) previewAudioEl.pause();
+      previewAudioEl = new Audio(track.blobUrl || track.path);
+      previewAudioId = track.id;
+      previewAudioEl.play().catch(() => {});
+      previewAudioEl.onended = () => {
+        previewAudioId = null;
+        renderMusicLibrary();
+      };
+      renderMusicLibrary();
+    }
+
+    function addMusicTrackToTimeline(track) {
+      const audioTrack = getOrCreateTrackOfType("audio");
+      const dur = Math.min(track.duration || 15, Math.max(4, state.totalDuration || 10));
+      const newItem = {
+        id: "aud_" + Date.now(),
+        trackId: audioTrack.id,
+        kind: "audio",
+        name: track.title,
+        musicPath: track.path,
+        musicBlobUrl: track.blobUrl || "",
+        startTime: 0,
+        duration: dur,
+        volume: 0.8,
+        fadeIn: 0.5,
+        fadeOut: 1.0
+      };
+      state.items.push(newItem);
+      selectItem(newItem.id);
+      recalculateTotalDuration();
+      renderTimeline();
+      showSnackbar(`Musik "${track.title}" zur Timeline hinzugefügt`);
+    }
+
+    function renderMusicLibrary() {
+      const list = document.getElementById("musicList");
+      const countEl = document.getElementById("musicCount");
+      if (!list) return;
+      if (countEl) countEl.textContent = state.musicLibrary.length;
+      list.innerHTML = "";
+
+      if (state.musicLibrary.length === 0) {
+        list.innerHTML = `<div class="text-[11px] text-m3-onSurfaceVariant p-3 bg-m3-container rounded-m3-md border border-m3-outlineVariant">Keine MP3s in <code>/msk/</code> gefunden oder noch nicht geladen.</div>`;
+        return;
+      }
+
+      state.musicLibrary.forEach((tr) => {
+        const isPrev = previewAudioId === tr.id;
+        const row = document.createElement("div");
+        row.className = "p-2.5 rounded-m3-md bg-m3-container hover:bg-m3-containerHigh border border-m3-outlineVariant flex items-center justify-between gap-2";
+        row.innerHTML = `
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-white truncate">${tr.title}</div>
+            <div class="text-[10px] text-m3-onSurfaceVariant">${tr.artist}</div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button class="prev-btn w-7 h-7 rounded-full bg-m3-bg hover:bg-white hover:text-black text-white flex items-center justify-center" title="Vorhören">
+              <span class="material-symbols-rounded text-[16px]">${isPrev ? "stop" : "play_arrow"}</span>
+            </button>
+            <button class="add-btn px-2.5 py-1 rounded-pill bg-m3-primary text-m3-onPrimary text-[10px] font-bold">
+              + Track
+            </button>
+          </div>
+        `;
+        row.querySelector(".prev-btn").onclick = () => togglePreviewMusic(tr);
+        row.querySelector(".add-btn").onclick = () => addMusicTrackToTimeline(tr);
+        list.appendChild(row);
+      });
+    }
+
+    // ============================================================================
+    // 5. CONFIG SYSTEM ("GEHIRN" SPEICHERN, EXPORTIEREN & LADEN)
+    // ============================================================================
+    function serializeProjectBrain(customName) {
+      const name = customName || document.getElementById("configNameInput").value.trim() || document.getElementById("projectTitleInput").value.trim() || "MonoCut_Config";
+      return {
+        version: "1.0",
+        name,
+        savedAt: new Date().toISOString(),
+        aspectRatio: state.aspectRatio,
+        tracks: JSON.parse(JSON.stringify(state.tracks)),
+        items: state.items.map((it) => {
+          const copy = JSON.parse(JSON.stringify(it));
+          if (copy.kind === "media" && copy.mediaId) {
+            const med = state.mediaLibrary.find((m) => m.id === copy.mediaId);
+            if (med) copy.expectedMediaName = med.name;
+          }
+          if (copy.kind === "scene" && copy.sceneMediaId) {
+            const med = state.mediaLibrary.find((m) => m.id === copy.sceneMediaId);
+            if (med) copy.expectedSceneMediaName = med.name;
+          }
+          delete copy.musicBlobUrl;
+          return copy;
+        })
+      };
+    }
+
+    function saveConfigToBrowser() {
+      const brain = serializeProjectBrain();
+      state.savedConfigs = state.savedConfigs.filter((c) => c.name !== brain.name);
+      state.savedConfigs.unshift(brain);
+      try {
+        localStorage.setItem("monocut_configs_v1", JSON.stringify(state.savedConfigs));
+      } catch (e) {}
+      renderConfigsLists();
+      showSnackbar(`Config "${brain.name}" im Browser gespeichert`);
+    }
+
+    function loadBrowserSavedConfigs() {
+      try {
+        const raw = localStorage.getItem("monocut_configs_v1");
+        if (raw) state.savedConfigs = JSON.parse(raw);
+      } catch (e) {}
+      renderConfigsLists();
+    }
+
+    function exportConfigJsonFile() {
+      const brain = serializeProjectBrain();
+      const blob = new Blob([JSON.stringify(brain, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${brain.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showSnackbar(`Config "${brain.name}.json" exportiert`);
+    }
+
+    function importConfigJsonFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const brain = JSON.parse(reader.result);
+          applyProjectBrain(brain);
+        } catch (e) {
+          showSnackbar("Ungültige Config-JSON-Datei");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    async function loadRepoConfigFromUrl(url) {
+      try {
+        const res = await fetch(url);
+        const brain = await res.json();
+        applyProjectBrain(brain);
+      } catch (e) {
+        showSnackbar("Repo-Config konnte nicht geladen werden");
+      }
+    }
+
+    function applyProjectBrain(brain) {
+      if (!brain || !Array.isArray(brain.tracks) || !Array.isArray(brain.items)) return;
+      if (brain.aspectRatio) setAspectRatio(brain.aspectRatio);
+      if (brain.name) document.getElementById("projectTitleInput").value = brain.name;
+
+      state.tracks = JSON.parse(JSON.stringify(brain.tracks));
+      state.items = JSON.parse(JSON.stringify(brain.items));
+
+      let missingCount = 0;
+      state.items.forEach((it) => {
+        if (it.kind === "media" && it.expectedMediaName) {
+          const match = state.mediaLibrary.find((m) => m.name === it.expectedMediaName);
+          if (match) it.mediaId = match.id;
+          else missingCount++;
+        }
+        if (it.kind === "scene" && it.expectedSceneMediaName) {
+          const match = state.mediaLibrary.find((m) => m.name === it.expectedSceneMediaName);
+          if (match) it.sceneMediaId = match.id;
+          else missingCount++;
+        }
+      });
+
+      const banner = document.getElementById("missingMediaBanner");
+      if (missingCount > 0) {
+        document.getElementById("missingMediaText").textContent = `${missingCount} Video/Bild-Platzhalter in dieser Config. Verknüpfe deine Dateien:`;
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
+      }
+
+      state.selectedItemId = state.items[0] ? state.items[0].id : null;
+      recalculateTotalDuration();
+      renderTimeline();
+      updateInspector();
+      renderFrame();
+      showSnackbar(`Config "${brain.name || "Setup"}" geladen`);
+    }
+
+    async function relinkMissingMedia(files) {
+      if (!files || !files.length) return;
+      await handleFiles(files, true);
+      state.items.forEach((it) => {
+        if (it.kind === "media" && it.expectedMediaName) {
+          const match = state.mediaLibrary.find((m) => m.name === it.expectedMediaName) || state.mediaLibrary[state.mediaLibrary.length - 1];
+          if (match) it.mediaId = match.id;
+        }
+        if (it.kind === "scene" && it.expectedSceneMediaName) {
+          const match = state.mediaLibrary.find((m) => m.name === it.expectedSceneMediaName) || state.mediaLibrary[state.mediaLibrary.length - 1];
+          if (match) it.sceneMediaId = match.id;
+        }
+      });
+      document.getElementById("missingMediaBanner").classList.add("hidden");
+      renderFrame();
+      showSnackbar("Medien erfolgreich verknüpft");
+    }
+
+    function renderConfigsLists() {
+      const repoWrap = document.getElementById("repoConfigsList");
+      const savedWrap = document.getElementById("savedConfigsList");
+      if (repoWrap) {
+        repoWrap.innerHTML = state.repoConfigs.length
+          ? state.repoConfigs
+              .map(
+                (c) => `<div class="p-2 rounded-m3-sm bg-m3-container border border-m3-outlineVariant flex items-center justify-between gap-2">
+                  <span class="text-xs text-white font-medium truncate">${c.name}</span>
+                  <button onclick="loadRepoConfigFromUrl('${c.url}')" class="px-2.5 py-1 rounded-pill bg-m3-primary text-m3-onPrimary text-[10px] font-bold">Laden</button>
+                </div>`
+              )
+              .join("")
+          : `<div class="text-[10px] text-m3-onSurfaceVariant">Keine Templates in <code>/config/</code> gefunden.</div>`;
+      }
+
+      if (savedWrap) {
+        savedWrap.innerHTML = state.savedConfigs.length
+          ? state.savedConfigs
+              .map(
+                (c, idx) => `<div class="p-2 rounded-m3-sm bg-m3-container border border-m3-outlineVariant flex items-center justify-between gap-2">
+                  <span class="text-xs text-white font-medium truncate">${c.name}</span>
+                  <button onclick="applyProjectBrain(state.savedConfigs[${idx}])" class="px-2.5 py-1 rounded-pill bg-m3-containerHighest hover:bg-white hover:text-black text-white text-[10px] font-bold">Laden</button>
+                </div>`
+              )
+              .join("")
+          : `<div class="text-[10px] text-m3-onSurfaceVariant">Noch keine lokalen Configs gespeichert.</div>`;
+      }
+    }
+
+    // ============================================================================
+    // 6. PROCEDURAL CLIPS, HANDY-CUTOUT & TEXT LAYER RENDERER
+    // ============================================================================
+    function drawProceduralClip(cCtx, pattern, t, W, H) {
+      cCtx.fillStyle = "#161616";
+      cCtx.fillRect(0, 0, W, H);
+      if (pattern === "waves") {
+        cCtx.strokeStyle = "#4A4A4A";
+        cCtx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+          cCtx.beginPath();
+          for (let x = 0; x <= W; x += 24) {
+            const y = H * 0.5 + Math.sin(x * 0.008 + t * 2 + i * 0.6) * (40 + i * 10);
+            if (x === 0) cCtx.moveTo(x, y);
+            else cCtx.lineTo(x, y);
+          }
+          cCtx.stroke();
+        }
+      } else {
+        cCtx.strokeStyle = "#2E2E2E";
+        cCtx.lineWidth = 1.5;
+        const size = 48;
+        const shift = (t * 25) % size;
+        for (let x = -size + shift; x < W; x += size) {
+          cCtx.beginPath();
+          cCtx.moveTo(x, 0);
+          cCtx.lineTo(x, H);
+          cCtx.stroke();
+        }
+        for (let y = -size + shift; y < H; y += size) {
+          cCtx.beginPath();
+          cCtx.moveTo(0, y);
+          cCtx.lineTo(W, y);
+          cCtx.stroke();
+        }
+      }
+    }
+
+    function renderPhoneSceneCutout(targetCtx, item, elapsed, W, H) {
+      const dev = item.deviceType || "phone";
+      let frameW = H * 0.44;
+      let frameH = H * 0.88;
+      let cornerR = frameW * 0.14;
+
+      if (dev === "phoneLandscape") {
+        frameW = W * 0.68;
+        frameH = W * 0.34;
+        cornerR = frameH * 0.14;
+      } else if (dev === "tablet") {
+        frameW = H * 0.66;
+        frameH = H * 0.86;
+        cornerR = frameW * 0.06;
+      }
+
+      const bezel = Math.max(8, Math.min(frameW, frameH) * 0.035);
+      const x = -frameW / 2;
+      const y = -frameH / 2;
+
+      // Schatten & Gehäuse
+      targetCtx.save();
+      targetCtx.shadowColor = "rgba(0,0,0,0.65)";
+      targetCtx.shadowBlur = 32;
+      targetCtx.shadowOffsetY = 14;
+      targetCtx.fillStyle = "#0B0B0B";
+      roundRectPath(targetCtx, x, y, frameW, frameH, cornerR);
+      targetCtx.fill();
+      targetCtx.restore();
+
+      targetCtx.strokeStyle = "#5A5A5A";
+      targetCtx.lineWidth = 2.5;
+      roundRectPath(targetCtx, x, y, frameW, frameH, cornerR);
+      targetCtx.stroke();
+
+      // Screen Cutout Clip
+      const sx = x + bezel;
+      const sy = y + bezel;
+      const sw = frameW - bezel * 2;
+      const sh = frameH - bezel * 2;
+      const sr = Math.max(8, cornerR - bezel * 0.7);
+
+      targetCtx.save();
+      roundRectPath(targetCtx, sx, sy, sw, sh, sr);
+      targetCtx.clip();
+
+      const sceneMedia = item.sceneMediaId ? state.mediaLibrary.find((m) => m.id === item.sceneMediaId) : null;
+      if (sceneMedia) {
+        drawMediaContentCover(targetCtx, sceneMedia, elapsed, sx, sy, sw, sh);
+      } else {
+        targetCtx.fillStyle = "#222222";
+        targetCtx.fillRect(sx, sy, sw, sh);
+        drawProceduralClip(targetCtx, "waves", elapsed, sw, sh);
+        targetCtx.fillStyle = "#D4D4D4";
+        targetCtx.font = `700 ${Math.round(sw * 0.07)}px 'Plus Jakarta Sans', sans-serif`;
+        targetCtx.textAlign = "center";
+        targetCtx.fillText("HANDY CUTOUT", 0, 0);
+      }
+
+      if (item.showNotch !== false && dev === "phone") {
+        const pillW = sw * 0.28;
+        const pillH = sh * 0.026;
+        targetCtx.fillStyle = "#050505";
+        roundRectPath(targetCtx, -pillW / 2, sy + sh * 0.022, pillW, pillH, pillH / 2);
+        targetCtx.fill();
+      }
+      targetCtx.restore();
+    }
+
+    function renderTextLayer(targetCtx, item, W, H) {
+      const fontSize = (item.fontSize || 48) * (W / 1280);
+      const fontFam = item.fontFamily || "Plus Jakarta Sans";
+      targetCtx.font = `800 ${Math.round(fontSize)}px '${fontFam}', sans-serif`;
+      targetCtx.textAlign = "center";
+      targetCtx.textBaseline = "middle";
+
+      const lines = String(item.text || "").split("\n");
+      const lineHeight = fontSize * 1.18;
+      let maxW = 0;
+      lines.forEach((l) => {
+        const m = targetCtx.measureText(l);
+        if (m.width > maxW) maxW = m.width;
+      });
+      const totalH = lines.length * lineHeight;
+
+      const padMult = item.pillPadding !== undefined ? item.pillPadding : 1.0;
+      const padX = fontSize * 0.65 * padMult;
+      const padY = fontSize * 0.35 * padMult;
+      const boxW = maxW + padX * 2;
+      const boxH = totalH + padY * 2;
+      const radPct = item.pillRadius !== undefined ? item.pillRadius : 100;
+      const radius = (Math.min(boxW, boxH) / 2) * (radPct / 100);
+
+      if (item.pillBgColor && item.pillBgColor !== "transparent") {
+        targetCtx.fillStyle = item.pillBgColor;
+        roundRectPath(targetCtx, -boxW / 2, -boxH / 2, boxW, boxH, radius);
+        targetCtx.fill();
+      }
+
+      if (item.pillBorderColor && item.pillBorderColor !== "transparent") {
+        targetCtx.strokeStyle = item.pillBorderColor;
+        targetCtx.lineWidth = Math.max(2, fontSize * 0.06);
+        roundRectPath(targetCtx, -boxW / 2, -boxH / 2, boxW, boxH, radius);
+        targetCtx.stroke();
+      }
+
+      targetCtx.fillStyle = item.textColor || "#FFFFFF";
+      lines.forEach((line, idx) => {
+        const ly = -totalH / 2 + lineHeight * (idx + 0.5);
+        targetCtx.fillText(line, 0, ly);
+      });
+    }
+
+    // ============================================================================
+    // 7. MEDIEN-IMPORT, HEVC/H.265 AUTO-TRANSCODER (WORKER-FREE FÜR ORIGIN 'NULL')
+    // ============================================================================
+    let ffmpegInstance = null;
+    let ffmpegLoadingPromise = null;
+
+    async function fetchAsSameOriginBlobURL(url, mimeType) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} für ${url}`);
+      const buf = await res.arrayBuffer();
+      const blob = new Blob([buf], { type: mimeType });
+      return URL.createObjectURL(blob);
+    }
+
+    async function getFFmpegTranscoder(onStatus) {
+      if (ffmpegInstance) return ffmpegInstance;
+      if (ffmpegLoadingPromise) return ffmpegLoadingPromise;
+
+      ffmpegLoadingPromise = (async () => {
+        try {
+          if (onStatus) onStatus("Lade Worker-freien HEVC-Decoder...");
+          // @ffmpeg/ffmpeg 0.11.6 mit single-thread core benötigt KEINEN Web Worker (funktioniert in origin 'null')
+          if (!window.FFmpeg) {
+            const scriptBlobUrl = await fetchAsSameOriginBlobURL(
+              "https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js",
+              "text/javascript"
+            );
+            await new Promise((resolve, reject) => {
+              const s = document.createElement("script");
+              s.src = scriptBlobUrl;
+              s.onload = resolve;
+              s.onerror = reject;
+              document.head.appendChild(s);
+            });
+          }
+
+          if (onStatus) onStatus("Lade Single-Thread WASM-Core (~25 MB)...");
+          const [coreJsText, wasmBuffer] = await Promise.all([
+            fetch("https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js").then((r) => {
+              if (!r.ok) throw new Error(`HTTP ${r.status} beim Laden von ffmpeg-core.js`);
+              return r.text();
+            }),
+            fetch("https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.wasm").then((r) => {
+              if (!r.ok) throw new Error(`HTTP ${r.status} beim Laden von ffmpeg-core.wasm`);
+              return r.arrayBuffer();
+            })
+          ]);
+
+          const coreBlobUrl = URL.createObjectURL(new Blob([coreJsText], { type: "text/javascript" }));
+
+          // Abfangen von WebAssembly.instantiate / instantiateStreaming während ff.load(),
+          // damit Emscripten in origin 'null' immer den echten WASM-ArrayBuffer verwendet
+          const origInstantiate = WebAssembly.instantiate;
+          const origInstantiateStreaming = WebAssembly.instantiateStreaming;
+
+          WebAssembly.instantiate = function (source, importObject) {
+            const bytes = new Uint8Array(source instanceof ArrayBuffer ? source : source.buffer || source);
+            const isWasmMagic = bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x61 && bytes[2] === 0x73 && bytes[3] === 0x6d;
+            return origInstantiate.call(WebAssembly, isWasmMagic ? source : wasmBuffer, importObject);
+          };
+
+          if (origInstantiateStreaming) {
+            WebAssembly.instantiateStreaming = function (responsePromise, importObject) {
+              return origInstantiate.call(WebAssembly, wasmBuffer, importObject);
+            };
+          }
+
+          try {
+            const { createFFmpeg } = window.FFmpeg;
+            const ff = createFFmpeg({
+              corePath: coreBlobUrl,
+              mainName: "main",
+              log: false
+            });
+            await ff.load();
+            ffmpegInstance = ff;
+            return ff;
+          } finally {
+            WebAssembly.instantiate = origInstantiate;
+            if (origInstantiateStreaming) {
+              WebAssembly.instantiateStreaming = origInstantiateStreaming;
+            }
+          }
+        } catch (err) {
+          ffmpegLoadingPromise = null;
+          throw err;
+        }
+      })();
+
+      return ffmpegLoadingPromise;
+    }
+
+    async function transcodeHevcFileToPlayableBlob(file, onProgress, onStatus) {
+      const ff = await getFFmpegTranscoder(onStatus);
+      const inputName = "in_" + Date.now() + ".mp4";
+      const outputWebm = "out_" + Date.now() + ".webm";
+      const outputMp4 = "out_" + Date.now() + ".mp4";
+
+      ff.setProgress(({ ratio }) => {
+        if (onProgress && isFinite(ratio)) {
+          onProgress(Math.max(15, Math.min(98, Math.round(ratio * 100))));
+        }
+      });
+
+      const fileData = new Uint8Array(await file.arrayBuffer());
+      ff.FS("writeFile", inputName, fileData);
+
+      // Versuch 1: Schnelles H.264 MP4
+      if (onStatus) onStatus("Konvertiere HEVC → H.264...");
+      try {
+        await ff.run(
+          "-i", inputName,
+          "-c:v", "libx264",
+          "-preset", "ultrafast",
+          "-crf", "24",
+          "-pix_fmt", "yuv420p",
+          "-c:a", "aac",
+          "-b:a", "128k",
+          "-movflags", "+faststart",
+          outputMp4
+        );
+        const outData = ff.FS("readFile", outputMp4);
+        if (outData && outData.byteLength > 1000) {
+          try {
+            ff.FS("unlink", inputName);
+            ff.FS("unlink", outputMp4);
+          } catch (e) {}
+          return new Blob([outData.buffer], { type: "video/mp4" });
+        }
+      } catch (e) {}
+
+      // Versuch 2: VP8 WebM (garantiert in jedem Core enthalten)
+      if (onStatus) onStatus("Konvertiere HEVC → VP8 WebM...");
+      await ff.run(
+        "-i", inputName,
+        "-c:v", "libvpx",
+        "-deadline", "realtime",
+        "-cpu-used", "8",
+        "-b:v", "2500k",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "libvorbis",
+        outputWebm
+      );
+
+      const outData = ff.FS("readFile", outputWebm);
+      try {
+        ff.FS("unlink", inputName);
+        ff.FS("unlink", outputWebm);
+      } catch (e) {}
+      if (outData && outData.byteLength > 1000) {
+        return new Blob([outData.buffer], { type: "video/webm" });
+      }
+
+      throw new Error("HEVC-Konvertierung erzeugte keine Ausgabedatei");
+    }
+
+    async function probeVideoElement(url) {
+      const video = document.createElement("video");
+      video.src = url;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = "auto";
+      video.crossOrigin = "anonymous";
+
+      const pool = document.getElementById("video-decoder-pool");
+      video.style.width = "320px";
+      video.style.height = "180px";
+      video.style.objectFit = "contain";
+      pool.appendChild(video);
+
+      let decodeError = false;
+      await new Promise((resolve) => {
+        let settled = false;
+        const done = () => {
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+        };
+        video.onloadeddata = () => {
+          if (video.duration && isFinite(video.duration) && video.duration > 0.2) {
+            video.currentTime = Math.min(0.15, video.duration * 0.05);
+          } else {
+            done();
+          }
+        };
+        video.onseeked = done;
+        video.onerror = () => {
+          decodeError = true;
+          done();
+        };
+        setTimeout(done, 2500);
+      });
+
+      return { video, decodeError };
+    }
+
+    function setupPersistentVideoDecoder(video, mediaItem) {
+      const frameCanvas = document.createElement("canvas");
+      frameCanvas.width = video.videoWidth || 1280;
+      frameCanvas.height = video.videoHeight || 720;
+      const frameCtx = frameCanvas.getContext("2d", { alpha: false });
+      mediaItem.frameCanvas = frameCanvas;
+      mediaItem.hasValidFrame = false;
+
+      const snapshotCurrentFrame = () => {
+        if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+          if (frameCanvas.width !== video.videoWidth || frameCanvas.height !== video.videoHeight) {
+            frameCanvas.width = video.videoWidth;
+            frameCanvas.height = video.videoHeight;
+          }
+          try {
+            frameCtx.drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
+            mediaItem.hasValidFrame = true;
+          } catch (e) {}
+        }
+      };
+
+      mediaItem.snapshotFrame = snapshotCurrentFrame;
+
+      video.addEventListener("loadeddata", snapshotCurrentFrame);
+      video.addEventListener("seeked", snapshotCurrentFrame);
+      video.addEventListener("timeupdate", snapshotCurrentFrame);
+
+      if ("requestVideoFrameCallback" in video) {
+        const onVideoFrame = () => {
+          snapshotCurrentFrame();
+          if (video.isConnected) {
+            video.requestVideoFrameCallback(onVideoFrame);
+          }
+        };
+        video.requestVideoFrameCallback(onVideoFrame);
+      }
+
+      snapshotCurrentFrame();
+    }
+
+    async function handleFiles(fileList, skipAutoTimeline = false) {
+      let lastAddedMedia = null;
+      const hevcBanner = document.getElementById("hevcTranscodeBanner");
+      const hevcTitle = document.getElementById("hevcTranscodeTitle");
+      const hevcSub = document.getElementById("hevcTranscodeSub");
+      const hevcBar = document.getElementById("hevcTranscodeBar");
+
+      for (const file of fileList) {
+        let url = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
+        const isImage = file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+        if (!isVideo && !isImage) continue;
+
+        if (isVideo) {
+          let { video, decodeError } = await probeVideoElement(url);
+          let wasTranscoded = false;
+          let transcodeErrorMsg = "";
+
+          // Falls HEVC / H.265 vom Browser-Decoder abgelehnt wird (Ton läuft, aber videoWidth === 0):
+          if (decodeError || video.videoWidth === 0 || video.videoHeight === 0) {
+            video.remove();
+            URL.revokeObjectURL(url);
+
+            hevcBanner.classList.remove("hidden");
+            hevcTitle.textContent = `HEVC/H.265 erkannt: ${file.name}`;
+            hevcSub.textContent = "Initialisiere Browser-Transcoder...";
+            hevcBar.style.width = "10%";
+
+            try {
+              const convertedBlob = await transcodeHevcFileToPlayableBlob(
+                file,
+                (pct) => {
+                  hevcBar.style.width = pct + "%";
+                },
+                (statusMsg) => {
+                  hevcSub.textContent = statusMsg;
+                }
+              );
+              url = URL.createObjectURL(convertedBlob);
+              const reprobe = await probeVideoElement(url);
+              video = reprobe.video;
+              decodeError = reprobe.decodeError;
+              wasTranscoded = true;
+            } catch (transErr) {
+              transcodeErrorMsg = transErr && transErr.message ? transErr.message : String(transErr);
+              console.error("HEVC Transcode Fehler:", transErr);
+            } finally {
+              hevcBanner.classList.add("hidden");
+            }
+          }
+
+          const mediaItem = {
+            id: "med_" + Date.now() + Math.random().toString(36).substr(2, 4),
+            name: file.name,
+            type: "video",
+            url,
+            duration: video.duration && isFinite(video.duration) ? video.duration : 5,
+            element: video,
+            thumbnail: "",
+            codecWarning: ""
+          };
+
+          if (decodeError || video.videoWidth === 0 || video.videoHeight === 0) {
+            mediaItem.codecWarning = `HEVC-Fehler: ${transcodeErrorMsg || "Browser blockiert H.265"}`;
+            showSnackbar(mediaItem.codecWarning);
+          } else {
+            mediaItem.resolutionLabel = `${video.videoWidth}×${video.videoHeight}${wasTranscoded ? " • Konvertiert" : ""}`;
+            setupPersistentVideoDecoder(video, mediaItem);
+          }
+
+          mediaItem.thumbnail = captureThumbnail(mediaItem.hasValidFrame ? mediaItem.frameCanvas : video);
+          state.mediaLibrary.push(mediaItem);
+          lastAddedMedia = mediaItem;
+          if (!skipAutoTimeline) addMediaClipToTimeline(mediaItem);
+        } else if (isImage) {
+          const img = new Image();
+          img.src = url;
+          await new Promise((r) => {
+            img.onload = r;
+            img.onerror = r;
+          });
+          const mediaItem = {
+            id: "med_" + Date.now() + Math.random().toString(36).substr(2, 4),
+            name: file.name,
+            type: "image",
+            url,
+            duration: 5,
+            element: img,
+            thumbnail: url,
+            resolutionLabel: img.naturalWidth ? `${img.naturalWidth}×${img.naturalHeight}` : ""
+          };
+          state.mediaLibrary.push(mediaItem);
+          lastAddedMedia = mediaItem;
+          if (!skipAutoTimeline) addMediaClipToTimeline(mediaItem);
+        }
+      }
+      renderMediaLibrary();
+      updateInspector();
+
+      if (!skipAutoTimeline && lastAddedMedia && !lastAddedMedia.codecWarning) {
+        showSnackbar(`${fileList.length} Datei(en) importiert (${lastAddedMedia.resolutionLabel || "OK"})`);
+      }
+    }
+
+    function captureThumbnail(sourceEl) {
+      try {
+        const c = document.createElement("canvas");
+        c.width = 160;
+        c.height = 90;
+        const x = c.getContext("2d");
+        x.drawImage(sourceEl, 0, 0, c.width, c.height);
+        return c.toDataURL("image/jpeg", 0.75);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function renderMediaLibrary() {
+      const grid = document.getElementById("mediaGrid");
+      document.getElementById("mediaCount").textContent = state.mediaLibrary.length;
+      grid.innerHTML = "";
+
+      state.mediaLibrary.forEach((m) => {
+        const card = document.createElement("div");
+        card.className = "group relative bg-m3-container hover:bg-m3-containerHigh border border-m3-outlineVariant rounded-m3-md overflow-hidden cursor-pointer transition-all";
+        const badgeText = m.codecWarning
+          ? "DECODER !"
+          : m.type === "image"
+          ? "BILD"
+          : `${m.duration.toFixed(1)}s`;
+
+        card.innerHTML = `
+          <div class="aspect-video bg-m3-bg relative flex items-center justify-center overflow-hidden">
+            ${
+              m.thumbnail && !m.codecWarning
+                ? `<img src="${m.thumbnail}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform" />`
+                : `<span class="material-symbols-rounded text-[28px] text-m3-onSurfaceVariant">${m.codecWarning ? "warning" : "movie"}</span>`
+            }
+            ${
+              m.resolutionLabel
+                ? `<span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/75 text-[8px] font-mono text-m3-secondary">${m.resolutionLabel}</span>`
+                : ""
+            }
+            <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded ${m.codecWarning ? "bg-white text-black font-bold" : "bg-black/80 text-white"} text-[9px] font-mono">
+              ${badgeText}
+            </span>
+          </div>
+          <div class="p-1.5 flex items-center justify-between gap-1" title="${m.codecWarning || m.name}">
+            <span class="text-[10px] font-medium text-white truncate">${m.name}</span>
+            <span class="material-symbols-rounded text-[15px] text-m3-secondary group-hover:text-white shrink-0">add_circle</span>
+          </div>
+        `;
+        card.onclick = () => {
+          addMediaClipToTimeline(m);
+          showSnackbar(m.codecWarning ? m.codecWarning : `"${m.name}" zur Video-Spur hinzugefügt`);
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function addMediaClipToTimeline(mediaItem) {
+      // Auf oberste sichtbare Video-Spur legen
+      let track = state.tracks.find((t) => t.type === "video" && t.visible);
+      if (!track) track = getOrCreateTrackOfType("video");
+
+      let startTime = 0;
+      state.items
+        .filter((i) => i.trackId === track.id)
+        .forEach((c) => {
+          if (c.startTime + c.duration > startTime) startTime = c.startTime + c.duration;
+        });
+
+      const newItem = {
+        id: "item_" + Date.now() + Math.random().toString(36).substr(2, 4),
+        trackId: track.id,
+        kind: "media",
+        mediaId: mediaItem.id,
+        name: mediaItem.name,
+        startTime,
+        duration: mediaItem.duration || 5,
+        offset: 0,
+        x: 0,
+        y: 0,
+        scale: 1.0,
+        rotation: 0,
+        animIn: "none",
+        animOut: "none",
+        animLoop: "none",
+        animDuration: 0.6
+      };
+
+      state.items.push(newItem);
+      selectItem(newItem.id);
+      recalculateTotalDuration();
+      seekTo(startTime);
+      renderTimeline();
+      return newItem;
+    }
+
+    // ============================================================================
+    // 9. DEMO-CLIPS, TEXTE & HANDY-SZENEN ERSTELLEN
+    // ============================================================================
+    function createProceduralDemoClips(initialBoot = false) {
+      const demos = [
+        { name: "Mono_Waves_01.clip", pattern: "waves", duration: 4.0 },
+        { name: "Mono_Grid_02.clip", pattern: "grid", duration: 4.0 }
+      ];
+
+      const createdMedia = demos.map((d, idx) => {
+        const c = document.createElement("canvas");
+        c.width = 320;
+        c.height = 180;
+        drawProceduralClip(c.getContext("2d"), d.pattern, 1.2, 320, 180);
+
+        const m = {
+          id: "demo_med_" + idx + "_" + Date.now(),
+          name: d.name,
+          type: "procedural",
+          pattern: d.pattern,
+          duration: d.duration,
+          thumbnail: c.toDataURL("image/jpeg", 0.8)
+        };
+        state.mediaLibrary.push(m);
+        return m;
+      });
+
+      if (initialBoot) {
+        const vidTrack = getOrCreateTrackOfType("video");
+        state.items.push({
+          id: "demo_clip_1",
+          trackId: vidTrack.id,
+          kind: "media",
+          mediaId: createdMedia[0].id,
+          name: createdMedia[0].name,
+          startTime: 0,
+          duration: 4.0,
+          offset: 0,
+          x: 0,
+          y: 0,
+          scale: 1,
+          rotation: 0,
+          animIn: "fade",
+          animOut: "none",
+          animLoop: "none",
+          animDuration: 0.6
+        });
+
+        state.items.push({
+          id: "demo_clip_2",
+          trackId: vidTrack.id,
+          kind: "media",
+          mediaId: createdMedia[1].id,
+          name: createdMedia[1].name,
+          startTime: 4.0,
+          duration: 4.0,
+          offset: 0,
+          x: 0,
+          y: 0,
+          scale: 1,
+          rotation: 0,
+          animIn: "dissolve",
+          animOut: "fade",
+          animLoop: "none",
+          animDuration: 0.7
+        });
+
+        const sceneTrack = getOrCreateTrackOfType("scene");
+        state.items.push({
+          id: "demo_scene_1",
+          trackId: sceneTrack.id,
+          kind: "scene",
+          deviceType: "phone",
+          name: "Handy-Szene (Cutout)",
+          startTime: 1.0,
+          duration: 6.0,
+          x: 20,
+          y: 0,
+          scale: 0.82,
+          rotation: -3,
+          bgColor: "#1A1A1A",
+          showBg: true,
+          showNotch: true,
+          animIn: "popBounce",
+          animOut: "fade",
+          animLoop: "float",
+          animDuration: 0.75
+        });
+
+        const textTrack = getOrCreateTrackOfType("text");
+        state.items.push({
+          id: "item_text_1",
+          trackId: textTrack.id,
+          kind: "text",
+          name: "MonoCut Titel",
+          text: "MONOCUT\nSTUDIO",
+          fontFamily: "Plus Jakarta Sans",
+          fontSize: 64,
+          textColor: "#FFFFFF",
+          pillBgColor: "transparent",
+          pillBorderColor: "transparent",
+          pillRadius: 100,
+          pillPadding: 1.0,
+          x: -22,
+          y: -8,
+          scale: 1.0,
+          rotation: 0,
+          startTime: 1.2,
+          duration: 5.8,
+          animIn: "slideRight",
+          animOut: "fade",
+          animLoop: "none",
+          animDuration: 0.6
+        });
+
+        state.items.push({
+          id: "item_text_2",
+          trackId: textTrack.id,
+          kind: "text",
+          name: "MD3 Pill Tag",
+          text: "M3 MONOCHROME",
+          fontFamily: "JetBrains Mono",
+          fontSize: 24,
+          textColor: "#050505",
+          pillBgColor: "#D4D4D4",
+          pillBorderColor: "#FFFFFF",
+          pillRadius: 100,
+          pillPadding: 1.0,
+          x: -22,
+          y: 15,
+          scale: 1.0,
+          rotation: 0,
+          startTime: 1.8,
+          duration: 5.0,
+          animIn: "popBounce",
+          animOut: "fade",
+          animLoop: "none",
+          animDuration: 0.5
+        });
+      } else {
+        createdMedia.forEach((m) => addMediaClipToTimeline(m));
+        showSnackbar("Demo-Clips zur Timeline hinzugefügt");
+      }
+
+      renderMediaLibrary();
+      recalculateTotalDuration();
+      renderTimeline();
+    }
+
+    function addTextOverlay(preset) {
+      const track = getOrCreateTrackOfType("text");
+      let cfg = {
+        name: "Headline",
+        text: "NEUER TITEL",
+        fontSize: 64,
+        textColor: "#FFFFFF",
+        pillBgColor: "transparent",
+        pillBorderColor: "transparent",
+        y: 0
+      };
+
+      if (preset === "pillLight") {
+        cfg = {
+          name: "MD3 Pill Hell",
+          text: "MATERIAL 3 MONOCHROME",
+          fontSize: 30,
+          textColor: "#050505",
+          pillBgColor: "#D4D4D4",
+          pillBorderColor: "#FFFFFF",
+          y: 26
+        };
+      } else if (preset === "pillDark") {
+        cfg = {
+          name: "MD3 Pill Dunkel",
+          text: "EXPRESSIVE STUDIO",
+          fontSize: 30,
+          textColor: "#FFFFFF",
+          pillBgColor: "#3A3A3A",
+          pillBorderColor: "#787878",
+          y: 26
+        };
+      } else if (preset === "subtitle") {
+        cfg = {
+          name: "Untertitel",
+          text: "Schnitt-Animationen & Handy-Cutout",
+          fontSize: 32,
+          textColor: "#FFFFFF",
+          pillBgColor: "#050505",
+          pillBorderColor: "#3A3A3A",
+          y: 34
+        };
+      }
+
+      const newItem = {
+        id: "txt_" + Date.now(),
+        trackId: track.id,
+        kind: "text",
+        name: cfg.name,
+        text: cfg.text,
+        fontFamily: "Plus Jakarta Sans",
+        fontSize: cfg.fontSize,
+        textColor: cfg.textColor,
+        pillBgColor: cfg.pillBgColor,
+        pillBorderColor: cfg.pillBorderColor,
+        pillRadius: 100,
+        pillPadding: 1.0,
+        x: 0,
+        y: cfg.y,
+        scale: 1.0,
+        rotation: 0,
+        startTime: state.currentTime,
+        duration: 4.0,
+        animIn: "slideUp",
+        animOut: "fade",
+        animLoop: "none",
+        animDuration: 0.5
+      };
+
+      state.items.push(newItem);
+      selectItem(newItem.id);
+      recalculateTotalDuration();
+      renderTimeline();
+      renderFrame();
+      showSnackbar(`Text "${cfg.name}" hinzugefügt`);
+    }
+
+    function addPhoneScene(deviceType = "phone") {
+      const track = getOrCreateTrackOfType("scene");
+      const firstRealMedia = state.mediaLibrary.find((m) => m.type === "video" || m.type === "image");
+      const labelMap = {
+        phone: "Handy-Szene (Cutout)",
+        phoneLandscape: "Handy Querformat",
+        tablet: "Tablet-Szene"
+      };
+
+      const newItem = {
+        id: "scn_" + Date.now(),
+        trackId: track.id,
+        kind: "scene",
+        deviceType,
+        sceneMediaId: firstRealMedia ? firstRealMedia.id : "",
+        name: labelMap[deviceType] || "Handy-Szene",
+        startTime: state.currentTime,
+        duration: 5.0,
+        x: 0,
+        y: 0,
+        scale: 0.85,
+        rotation: 0,
+        bgColor: "#1A1A1A",
+        showBg: true,
+        showNotch: true,
+        animIn: "popBounce",
+        animOut: "fade",
+        animLoop: "float",
+        animDuration: 0.7
+      };
+
+      state.items.push(newItem);
+      selectItem(newItem.id);
+      recalculateTotalDuration();
+      renderTimeline();
+      renderFrame();
+      showSnackbar(`${newItem.name} eingefügt — Ränder ziehen zum Verlängern`);
+    }
+
+    async function handleDirectSceneMediaUpload(file) {
+      if (!file) return;
+      const before = state.mediaLibrary.length;
+      await handleFiles([file], true);
+      const added = state.mediaLibrary[before];
+      if (added) {
+        updateSelectedClipProp("sceneMediaId", added.id);
+        updateInspector();
+        showSnackbar(`"${added.name}" ins Handy-Cutout eingesetzt`);
+      }
+    }
+
+    // ============================================================================
+    // 10. SPUREN-VERWALTUNG, EXAKTE VIDEOLÄNGE & TIMELINE-RENDERING
+    // ============================================================================
+    function getOrCreateTrackOfType(type) {
+      const existing = state.tracks.find((t) => t.type === type);
+      if (existing) return existing;
+      return addTrack(type);
+    }
+
+    function addTrack(type) {
+      const count = state.tracks.filter((t) => t.type === type).length + 1;
+      const names = {
+        video: `Video-Spur ${count}`,
+        text: `Text-Spur ${count}`,
+        scene: `Handy-Spur ${count}`,
+        audio: `Musik-Spur ${count}`
+      };
+      const newTrack = {
+        id: `tr_${type}_${Date.now()}_${Math.random().toString(36).substr(2, 3)}`,
+        name: names[type] || `Spur ${count}`,
+        type,
+        visible: true
+      };
+      if (type === "text" || type === "scene") {
+        state.tracks.unshift(newTrack);
+      } else {
+        state.tracks.push(newTrack);
+      }
+      renderTimeline();
+      renderFrame();
+      showSnackbar(`${newTrack.name} hinzugefügt`);
+      return newTrack;
+    }
+
+    function toggleTrackVisibility(trackId) {
+      const tr = state.tracks.find((t) => t.id === trackId);
+      if (!tr) return;
+      tr.visible = !tr.visible;
+      renderTimeline();
+      renderFrame();
+    }
+
+    function deleteTrack(trackId) {
+      if (state.tracks.length <= 1) {
+        showSnackbar("Mindestens eine Spur muss erhalten bleiben");
+        return;
+      }
+      state.tracks = state.tracks.filter((t) => t.id !== trackId);
+      state.items = state.items.filter((i) => i.trackId !== trackId);
+      recalculateTotalDuration();
+      renderTimeline();
+      renderFrame();
+    }
+
+    function recalculateTotalDuration() {
+      if (state.items.length === 0) {
+        state.totalDuration = 1.0;
+        document.getElementById("totalDurationDisplay").textContent = formatTimecode(state.totalDuration);
+        return;
+      }
+
+      let maxEnd = 0;
+      state.items.forEach((item) => {
+        const itemEnd = item.startTime + item.duration;
+        if (itemEnd > maxEnd) maxEnd = itemEnd;
+      });
+
+      // Exakt so lange wie der letzte Clip in der Timeline (ohne leeren Nachlauf!)
+      state.totalDuration = Math.max(0.2, maxEnd);
+      if (state.currentTime > state.totalDuration) {
+        state.currentTime = state.totalDuration;
+        updatePlayheadUI();
+      }
+      document.getElementById("totalDurationDisplay").textContent = formatTimecode(state.totalDuration);
+    }
+
+    function toggleSnapping() {
+      state.snapEnabled = !state.snapEnabled;
+      const btn = document.getElementById("snapToggleBtn");
+      if (state.snapEnabled) {
+        btn.className = "m3-btn px-2.5 py-1 rounded-pill bg-m3-primary text-m3-onPrimary text-[11px] font-bold flex items-center gap-1";
+        btn.innerHTML = `<span class="material-symbols-rounded icon-filled text-[14px]">straighten</span><span>Snap: AN</span>`;
+      } else {
+        btn.className = "m3-btn px-2.5 py-1 rounded-pill bg-m3-container text-m3-onSurfaceVariant border border-m3-outlineVariant text-[11px] font-semibold flex items-center gap-1";
+        btn.innerHTML = `<span class="material-symbols-rounded text-[14px]">straighten</span><span>Snap: AUS</span>`;
+      }
+    }
+
+    function getSnapCandidates(excludeItemId) {
+      const points = [0, state.currentTime];
+      const maxTick = Math.ceil(state.totalDuration + 5);
+      for (let s = 1; s <= maxTick; s++) points.push(s);
+      state.items.forEach((it) => {
+        if (it.id !== excludeItemId) {
+          points.push(it.startTime);
+          points.push(it.startTime + it.duration);
+        }
+      });
+      return points;
+    }
+
+    function applySnap(rawTime, excludeItemId) {
+      if (!state.snapEnabled) return { time: Math.max(0, rawTime), snapped: false };
+      const thresholdSec = 10 / state.pxPerSec;
+      const candidates = getSnapCandidates(excludeItemId);
+      let best = rawTime;
+      let bestDist = thresholdSec;
+      let snapped = false;
+
+      for (const c of candidates) {
+        const d = Math.abs(rawTime - c);
+        if (d < bestDist) {
+          bestDist = d;
+          best = c;
+          snapped = true;
+        }
+      }
+      return { time: Math.max(0, best), snapped };
+    }
+
+    function showSnapGuide(timeSec) {
+      const guide = document.getElementById("snapGuideLine");
+      const headerWidth = window.innerWidth < 768 ? 144 : 176;
+      guide.style.left = headerWidth + timeSec * state.pxPerSec + "px";
+      guide.classList.remove("hidden");
+    }
+
+    function hideSnapGuide() {
+      document.getElementById("snapGuideLine").classList.add("hidden");
+    }
+
+    function setTimelineZoom(val) {
+      state.pxPerSec = parseInt(val);
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      const timelineWidth = Math.max(900, Math.ceil((state.totalDuration + 4) * state.pxPerSec));
+      const ruler = document.getElementById("timeRuler");
+      const tracksContainer = document.getElementById("tracksContainer");
+      ruler.style.width = timelineWidth + "px";
+      tracksContainer.style.width = timelineWidth + "px";
+
+      // Ruler Ticks
+      ruler.innerHTML = "";
+      const totalTicks = Math.ceil(timelineWidth / state.pxPerSec);
+      for (let s = 0; s <= totalTicks; s++) {
+        const tick = document.createElement("div");
+        tick.className = "absolute top-0 bottom-0 border-l border-m3-outlineVariant/70 text-[9px] font-mono text-m3-onSurfaceVariant pl-1 pt-1 pointer-events-none";
+        tick.style.left = s * state.pxPerSec + "px";
+        tick.textContent = s + "s";
+        ruler.appendChild(tick);
+      }
+
+      // Tracks & Clips
+      tracksContainer.innerHTML = "";
+      const trackIcons = {
+        video: "movie",
+        text: "title",
+        scene: "smartphone",
+        audio: "music_note"
+      };
+
+      state.tracks.forEach((track) => {
+        const row = document.createElement("div");
+        row.className = `flex min-h-[48px] ${track.visible ? "bg-[#191919]" : "bg-[#131313] opacity-55"}`;
+        row.dataset.trackId = track.id;
+
+        const header = document.createElement("div");
+        header.className = "w-36 md:w-44 shrink-0 border-r border-m3-outlineVariant px-2.5 py-1.5 flex items-center justify-between gap-1 bg-m3-containerLow sticky left-0 z-10";
+        header.innerHTML = `
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="material-symbols-rounded text-[15px] text-m3-secondary">${trackIcons[track.type] || "layers"}</span>
+            <span class="text-[11px] font-semibold text-white truncate" title="${track.name}">${track.name}</span>
+          </div>
+          <div class="flex items-center gap-0.5 shrink-0">
+            <button onclick="toggleTrackVisibility('${track.id}')" class="w-6 h-6 rounded-full hover:bg-m3-containerHigh text-m3-onSurfaceVariant hover:text-white flex items-center justify-center" title="Spur ein-/ausblenden">
+              <span class="material-symbols-rounded text-[14px]">${track.visible ? "visibility" : "visibility_off"}</span>
+            </button>
+            <button onclick="deleteTrack('${track.id}')" class="w-6 h-6 rounded-full hover:bg-m3-containerHigh text-m3-onSurfaceVariant hover:text-white flex items-center justify-center" title="Spur löschen">
+              <span class="material-symbols-rounded text-[14px]">close</span>
+            </button>
+          </div>
+        `;
+        row.appendChild(header);
+
+        const lane = document.createElement("div");
+        lane.className = "relative flex-1 min-h-[48px]";
+        lane.dataset.trackId = track.id;
+
+        const trackItems = state.items.filter((i) => i.trackId === track.id);
+        trackItems.forEach((item) => {
+          const clipEl = buildTimelineClipElement(item);
+          lane.appendChild(clipEl);
+        });
+
+        row.appendChild(lane);
+        tracksContainer.appendChild(row);
+      });
+
+      updatePlayheadUI();
+    }
+
+    function buildTimelineClipElement(item) {
+      const el = document.createElement("div");
+      const isSelected = state.selectedItemId === item.id;
+      const stylesByKind = {
+        media: "bg-m3-containerHigh text-white border border-m3-outline",
+        text: "bg-[#2F2F2F] text-white border border-[#686868]",
+        scene: "bg-m3-primary text-m3-onPrimary border border-white font-bold",
+        audio: "bg-[#232323] text-m3-primary border border-m3-outline"
+      };
+
+      el.className = `timeline-clip absolute top-1.5 bottom-1.5 rounded-m3-sm px-2.5 flex items-center justify-between cursor-grab active:cursor-grabbing overflow-hidden ${stylesByKind[item.kind] || stylesByKind.media} ${isSelected ? "selected" : ""}`;
+      el.style.left = item.startTime * state.pxPerSec + "px";
+      el.style.width = Math.max(22, item.duration * state.pxPerSec) + "px";
+
+      const animBadge = item.animIn && item.animIn !== "none" ? `<span class="text-[9px] px-1.5 py-0.2 rounded-pill bg-black/30 font-mono ml-1 shrink-0">${item.animIn}</span>` : "";
+
+      let waveformHtml = "";
+      if (item.kind === "audio") {
+        waveformHtml = `<div class="absolute inset-0 opacity-25 pointer-events-none flex items-center gap-[2px] px-2">
+          ${Array.from({ length: 28 }, (_, idx) => `<span class="flex-1 bg-white rounded-full" style="height:${25 + ((idx * 19) % 65)}%"></span>`).join("")}
+        </div>`;
+      }
+
+      el.innerHTML = `
+        ${waveformHtml}
+        <div class="trim-handle trim-left absolute left-0 top-0 bottom-0 w-2 bg-white/40 hover:bg-white cursor-ew-resize z-10"></div>
+        <div class="relative z-10 flex items-center min-w-0 pr-1">
+          <span class="text-[11px] font-semibold truncate">${item.name}</span>
+          ${animBadge}
+        </div>
+        <span class="relative z-10 text-[9px] font-mono opacity-75 shrink-0">${item.duration.toFixed(1)}s</span>
+        <div class="trim-handle trim-right absolute right-0 top-0 bottom-0 w-2 bg-white/40 hover:bg-white cursor-ew-resize z-10"></div>
+      `;
+
+      attachClipDragAndTrim(el, item);
+      return el;
+    }
+
+    function attachClipDragAndTrim(el, item) {
+      const startDrag = (clientX, clientY, mode) => {
+        selectItem(item.id);
+        const origStart = item.startTime;
+        const origDur = item.duration;
+
+        const onMove = (moveX, moveY) => {
+          const dx = moveX - clientX;
+          const dSec = dx / state.pxPerSec;
+
+          if (mode === "move") {
+            const rawStart = Math.max(0, origStart + dSec);
+            const snapStart = applySnap(rawStart, item.id);
+            const snapEnd = applySnap(rawStart + origDur, item.id);
+
+            if (snapStart.snapped) {
+              item.startTime = snapStart.time;
+              showSnapGuide(snapStart.time);
+            } else if (snapEnd.snapped) {
+              item.startTime = Math.max(0, snapEnd.time - origDur);
+              showSnapGuide(snapEnd.time);
+            } else {
+              item.startTime = rawStart;
+              hideSnapGuide();
+            }
+
+            // Vertikaler Spurwechsel per Drag
+            const elemUnder = document.elementFromPoint(moveX, moveY);
+            const lane = elemUnder ? elemUnder.closest("[data-track-id]") : null;
+            if (lane && lane.dataset.trackId !== item.trackId) {
+              const targetTrack = state.tracks.find((t) => t.id === lane.dataset.trackId);
+              if (targetTrack && ((item.kind === "audio") === (targetTrack.type === "audio"))) {
+                item.trackId = targetTrack.id;
+              }
+            }
+          } else if (mode === "trimRight") {
+            const rawEnd = Math.max(origStart + 0.2, origStart + origDur + dSec);
+            const snapEnd = applySnap(rawEnd, item.id);
+            item.duration = Math.max(0.2, snapEnd.time - origStart);
+            if (snapEnd.snapped) showSnapGuide(snapEnd.time);
+            else hideSnapGuide();
+          } else if (mode === "trimLeft") {
+            const maxStart = origStart + origDur - 0.2;
+            const rawStart = Math.min(maxStart, Math.max(0, origStart + dSec));
+            const snapStart = applySnap(rawStart, item.id);
+            const finalStart = Math.min(maxStart, snapStart.time);
+            const delta = finalStart - origStart;
+            item.startTime = finalStart;
+            item.duration = origDur - delta;
+            if (item.kind === "media") item.offset = Math.max(0, (item.offset || 0) + delta);
+            if (snapStart.snapped) showSnapGuide(finalStart);
+            else hideSnapGuide();
+          }
+
+          recalculateTotalDuration();
+          renderTimeline();
+          updateInspector();
+          renderFrame();
+        };
+
+        const onMouseMove = (e) => onMove(e.clientX, e.clientY);
+        const onTouchMove = (e) => {
+          if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY);
+        };
+        const onEnd = () => {
+          hideSnapGuide();
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onEnd);
+          window.removeEventListener("touchmove", onTouchMove);
+          window.removeEventListener("touchend", onEnd);
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onEnd);
+        window.addEventListener("touchmove", onTouchMove, { passive: true });
+        window.addEventListener("touchend", onEnd);
+      };
+
+      el.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        const mode = e.target.classList.contains("trim-left")
+          ? "trimLeft"
+          : e.target.classList.contains("trim-right")
+          ? "trimRight"
+          : "move";
+        startDrag(e.clientX, e.clientY, mode);
+      });
+
+      el.addEventListener(
+        "touchstart",
+        (e) => {
+          if (!e.touches[0]) return;
+          e.stopPropagation();
+          const mode = e.target.classList.contains("trim-left")
+            ? "trimLeft"
+            : e.target.classList.contains("trim-right")
+            ? "trimRight"
+            : "move";
+          startDrag(e.touches[0].clientX, e.touches[0].clientY, mode);
+        },
+        { passive: true }
+      );
+    }
+
+    // Ruler Scrubbing
+    (function initRulerScrubbing() {
+      const ruler = document.getElementById("timeRuler");
+      const scrub = (clientX) => {
+        const rect = ruler.getBoundingClientRect();
+        const x = Math.max(0, clientX - rect.left);
+        const t = Math.min(state.totalDuration, x / state.pxPerSec);
+        seekTo(t);
+      };
+      ruler.addEventListener("mousedown", (e) => {
+        scrub(e.clientX);
+        const move = (ev) => scrub(ev.clientX);
+        const up = () => {
+          window.removeEventListener("mousemove", move);
+          window.removeEventListener("mouseup", up);
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+      });
+    })();
+
+    function updatePlayheadUI() {
+      const headerWidth = window.innerWidth < 768 ? 144 : 176;
+      const playhead = document.getElementById("playhead");
+      playhead.style.left = headerWidth + state.currentTime * state.pxPerSec + "px";
+      document.getElementById("currentTimeDisplay").textContent = formatTimecode(state.currentTime);
+    }
+
+    function formatTimecode(sec) {
+      const mins = Math.floor(sec / 60);
+      const secs = Math.floor(sec % 60);
+      const tenths = Math.floor((sec % 1) * 10);
+      return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${tenths}`;
+    }
+
+    // ============================================================================
+    // 11. AUSWAHL, SPLIT, LÖSCHEN & INSPEKTOR-SYNCHRONISATION
+    // ============================================================================
+    function selectItem(id) {
+      state.selectedItemId = id;
+      renderTimeline();
+      updateInspector();
+      renderFrame();
+    }
+
+    function getSelectedItem() {
+      return state.items.find((i) => i.id === state.selectedItemId) || null;
+    }
+
+    function updateSelectedClipProp(prop, val) {
+      const item = getSelectedItem();
+      if (!item) return;
+      item[prop] = val;
+      recalculateTotalDuration();
+      renderTimeline();
+      updateInspector();
+      renderFrame();
+    }
+
+    function resetSelectedTransform() {
+      const item = getSelectedItem();
+      if (!item) return;
+      item.x = 0;
+      item.y = 0;
+      item.scale = item.kind === "scene" ? 0.85 : 1.0;
+      item.rotation = 0;
+      updateInspector();
+      renderFrame();
+    }
+
+    function deleteSelectedItem() {
+      if (!state.selectedItemId) return;
+      state.items = state.items.filter((i) => i.id !== state.selectedItemId);
+      state.selectedItemId = null;
+      recalculateTotalDuration();
+      renderTimeline();
+      updateInspector();
+      renderFrame();
+      showSnackbar("Element entfernt");
+    }
+
+    function splitSelectedAtPlayhead() {
+      const item = getSelectedItem();
+      if (!item) {
+        showSnackbar("Bitte zuerst einen Clip in der Timeline auswählen");
+        return;
+      }
+      const splitPoint = state.currentTime;
+      if (splitPoint <= item.startTime + 0.15 || splitPoint >= item.startTime + item.duration - 0.15) {
+        showSnackbar("Playhead muss innerhalb des ausgewählten Clips stehen");
+        return;
+      }
+
+      const firstDur = splitPoint - item.startTime;
+      const secondDur = item.duration - firstDur;
+      item.duration = firstDur;
+
+      const secondPart = {
+        ...JSON.parse(JSON.stringify(item)),
+        id: "split_" + Date.now(),
+        startTime: splitPoint,
+        duration: secondDur,
+        offset: (item.offset || 0) + firstDur
+      };
+
+      state.items.push(secondPart);
+      selectItem(secondPart.id);
+      renderTimeline();
+      renderFrame();
+      showSnackbar("Clip am Playhead geteilt");
+    }
+
+    function updateInspector() {
+      const item = getSelectedItem();
+      const emptyEl = document.getElementById("inspectorEmpty");
+      const contentEl = document.getElementById("inspectorContent");
+      const delBtn = document.getElementById("deleteClipBtn");
+
+      if (!item) {
+        emptyEl.classList.remove("hidden");
+        contentEl.classList.add("hidden");
+        delBtn.classList.add("hidden");
+        return;
+      }
+
+      emptyEl.classList.add("hidden");
+      contentEl.classList.remove("hidden");
+      delBtn.classList.remove("hidden");
+
+      document.getElementById("inspName").value = item.name || "";
+      document.getElementById("inspStart").value = item.startTime.toFixed(1);
+      document.getElementById("inspDuration").value = item.duration.toFixed(1);
+
+      const sceneSec = document.getElementById("inspSceneSection");
+      const textSec = document.getElementById("inspTextSection");
+      const transSec = document.getElementById("inspTransformSection");
+      const animSec = document.getElementById("inspAnimSection");
+      const audioSec = document.getElementById("inspAudioSection");
+
+      sceneSec.classList.toggle("hidden", item.kind !== "scene");
+      textSec.classList.toggle("hidden", item.kind !== "text");
+      audioSec.classList.toggle("hidden", item.kind !== "audio");
+      transSec.classList.toggle("hidden", item.kind === "audio");
+      animSec.classList.toggle("hidden", item.kind === "audio");
+
+      if (item.kind === "scene") {
+        const mediaSel = document.getElementById("inspSceneMediaSelect");
+        mediaSel.innerHTML =
+          `<option value="">Animiertes Monochrome-Mockup</option>` +
+          state.mediaLibrary.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+        mediaSel.value = item.sceneMediaId || "";
+        document.getElementById("inspDeviceType").value = item.deviceType || "phone";
+        document.getElementById("inspSceneBgColor").value = item.bgColor || "#1A1A1A";
+        document.getElementById("inspSceneShowBg").checked = item.showBg !== false;
+        document.getElementById("inspSceneShowNotch").checked = item.showNotch !== false;
+      }
+
+      if (item.kind === "text") {
+        document.getElementById("inspTextContent").value = item.text || "";
+        renderFontsList();
+        document.getElementById("inspFontFamily").value = item.fontFamily || "Plus Jakarta Sans";
+        document.getElementById("inspFontSize").value = item.fontSize || 48;
+        document.getElementById("inspFontSizeVal").textContent = item.fontSize || 48;
+
+        const txtCol = item.textColor || "#FFFFFF";
+        const bgCol = item.pillBgColor || "transparent";
+        const brdCol = item.pillBorderColor || "transparent";
+        document.getElementById("inspTextColorLabel").textContent = getMonoColorLabel(txtCol);
+        document.getElementById("inspPillBgLabel").textContent = getMonoColorLabel(bgCol);
+        document.getElementById("inspPillBorderLabel").textContent = brdCol === "transparent" ? "Keiner" : getMonoColorLabel(brdCol);
+
+        const rad = item.pillRadius !== undefined ? item.pillRadius : 100;
+        const pad = item.pillPadding !== undefined ? item.pillPadding : 1.0;
+        document.getElementById("inspPillRadius").value = rad;
+        document.getElementById("inspPillRadiusVal").textContent = rad;
+        document.getElementById("inspPillPad").value = pad;
+        document.getElementById("inspPillPadVal").textContent = pad;
+      }
+
+      if (item.kind !== "audio") {
+        document.getElementById("inspX").value = item.x || 0;
+        document.getElementById("inspXVal").textContent = (item.x || 0) + "%";
+        document.getElementById("inspY").value = item.y || 0;
+        document.getElementById("inspYVal").textContent = (item.y || 0) + "%";
+        document.getElementById("inspScale").value = item.scale || 1;
+        document.getElementById("inspScaleVal").textContent = Math.round((item.scale || 1) * 100) + "%";
+        document.getElementById("inspRot").value = item.rotation || 0;
+        document.getElementById("inspRotVal").textContent = (item.rotation || 0) + "°";
+
+        document.getElementById("inspAnimIn").value = item.animIn || "none";
+        document.getElementById("inspAnimOut").value = item.animOut || "none";
+        document.getElementById("inspAnimLoop").value = item.animLoop || "none";
+        document.getElementById("inspAnimDur").value = item.animDuration || 0.6;
+        document.getElementById("inspAnimDurVal").textContent = item.animDuration || 0.6;
+      }
+
+      if (item.kind === "audio") {
+        document.getElementById("inspVol").value = item.volume !== undefined ? item.volume : 0.8;
+        document.getElementById("inspVolVal").textContent = Math.round((item.volume !== undefined ? item.volume : 0.8) * 100) + "%";
+        document.getElementById("inspFadeIn").value = item.fadeIn !== undefined ? item.fadeIn : 0.5;
+        document.getElementById("inspFadeOut").value = item.fadeOut !== undefined ? item.fadeOut : 1.0;
+      }
+    }
+
+    // ============================================================================
+    // 12. CANVAS SIZING, DRAG-ON-CANVAS & PLAYBACK ENGINE
+    // ============================================================================
+    function setAspectRatio(ratio) {
+      state.aspectRatio = ratio;
+      ["16:9", "9:16", "1:1"].forEach((r) => {
+        const btn = document.getElementById(`ratioBtn-${r.replace(":", "-")}`);
+        if (!btn) return;
+        btn.className =
+          r === ratio
+            ? "m3-btn px-3 py-1 rounded-pill text-xs font-semibold bg-m3-primary text-m3-onPrimary"
+            : "m3-btn px-3 py-1 rounded-pill text-xs font-semibold text-m3-onSurfaceVariant hover:text-white";
+      });
+      resizePreviewCanvas();
+      renderFrame();
+    }
+
+    function resizePreviewCanvas() {
+      const viewport = document.getElementById("canvasViewport");
+      const wrapper = document.getElementById("canvasWrapper");
+      const availW = Math.max(240, viewport.clientWidth - 32);
+      const availH = Math.max(160, viewport.clientHeight - 32);
+
+      const ratios = { "16:9": 16 / 9, "9:16": 9 / 16, "1:1": 1 };
+      const targetRatio = ratios[state.aspectRatio] || 16 / 9;
+
+      let w = availW;
+      let h = w / targetRatio;
+      if (h > availH) {
+        h = availH;
+        w = h * targetRatio;
+      }
+
+      wrapper.style.width = Math.floor(w) + "px";
+      wrapper.style.height = Math.floor(h) + "px";
+
+      if (state.aspectRatio === "16:9") {
+        canvas.width = 1280;
+        canvas.height = 720;
+      } else if (state.aspectRatio === "9:16") {
+        canvas.width = 720;
+        canvas.height = 1280;
+      } else {
+        canvas.width = 1080;
+        canvas.height = 1080;
+      }
+    }
+
+    // Direktes Verschieben von Handy-Szene, Text oder Video im Vorschau-Canvas
+    (function initCanvasDirectDrag() {
+      let dragging = false;
+      let startClientX = 0;
+      let startClientY = 0;
+      let origX = 0;
+      let origY = 0;
+
+      const onDown = (clientX, clientY) => {
+        let target = getSelectedItem();
+        if (!target || target.kind === "audio" || state.currentTime < target.startTime || state.currentTime > target.startTime + target.duration) {
+          const visible = getVisibleItemsAtTime(state.currentTime).filter((i) => i.kind !== "audio");
+          target = visible[visible.length - 1] || null;
+          if (target) selectItem(target.id);
+        }
+        if (!target || target.kind === "audio") return;
+        dragging = true;
+        startClientX = clientX;
+        startClientY = clientY;
+        origX = target.x || 0;
+        origY = target.y || 0;
+      };
+
+      const onMove = (clientX, clientY) => {
+        if (!dragging) return;
+        const item = getSelectedItem();
+        if (!item) return;
+        const rect = canvas.getBoundingClientRect();
+        const dxPct = ((clientX - startClientX) / rect.width) * 100;
+        const dyPct = ((clientY - startClientY) / rect.height) * 100;
+        item.x = Math.round(Math.max(-60, Math.min(60, origX + dxPct)));
+        item.y = Math.round(Math.max(-60, Math.min(60, origY + dyPct)));
+        updateInspector();
+        renderFrame();
+      };
+
+      const onUp = () => {
+        dragging = false;
+      };
+
+      canvas.addEventListener("mousedown", (e) => onDown(e.clientX, e.clientY));
+      window.addEventListener("mousemove", (e) => onMove(e.clientX, e.clientY));
+      window.addEventListener("mouseup", onUp);
+
+      canvas.addEventListener("touchstart", (e) => {
+        if (e.touches[0]) onDown(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener("touchmove", (e) => {
+        if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener("touchend", onUp);
+    })();
+
+    function isPlayingStopNeeded() {
+      return state.isPlaying;
+    }
+
+    function togglePlay() {
+      state.isPlaying = !state.isPlaying;
+      const icon = document.getElementById("playPauseIcon");
+      icon.textContent = state.isPlaying ? "pause" : "play_arrow";
+
+      if (state.isPlaying) {
+        if (state.currentTime >= state.totalDuration - 0.02) {
+          state.currentTime = 0;
+        }
+        lastFrameTimestamp = performance.now();
+        syncMediaAndAudioToTime(state.currentTime, true);
+        animFrameId = requestAnimationFrame(playbackLoop);
+      } else {
+        cancelAnimationFrame(animFrameId);
+        syncMediaAndAudioToTime(state.currentTime, false);
+      }
+    }
+
+    function playbackLoop(now) {
+      if (!state.isPlaying) return;
+      const dt = (now - lastFrameTimestamp) / 1000;
+      lastFrameTimestamp = now;
+      state.currentTime += dt;
+
+      if (state.currentTime >= state.totalDuration) {
+        state.currentTime = state.totalDuration;
+        updatePlayheadUI();
+        renderFrame();
+        togglePlay();
+        return;
+      }
+
+      syncMediaAndAudioToTime(state.currentTime, true);
+      updatePlayheadUI();
+      renderFrame();
+      animFrameId = requestAnimationFrame(playbackLoop);
+    }
+
+    function seekTo(t) {
+      state.currentTime = Math.max(0, Math.min(state.totalDuration, t));
+      syncMediaAndAudioToTime(state.currentTime, state.isPlaying);
+      updatePlayheadUI();
+      renderFrame();
+    }
+
+    function syncMediaAndAudioToTime(t, isPlaying) {
+      const masterVol = parseFloat(document.getElementById("masterVolume").value);
+      const activeItems = getVisibleItemsAtTime(t);
+
+      // 1. Video-Spuren synchronisieren (ohne Decoder-Stottern bei aktiver Wiedergabe!)
+      state.mediaLibrary.forEach((m) => {
+        if (m.type !== "video" || !m.element) return;
+        const usingItem = activeItems.find((item) => item.mediaId === m.id || item.sceneMediaId === m.id);
+
+        if (usingItem) {
+          const clipElapsed = Math.max(0, t - usingItem.startTime);
+          const rawTarget = clipElapsed + (usingItem.offset || 0);
+          const safeDur = m.duration && isFinite(m.duration) && m.duration > 0 ? m.duration : 10;
+          const targetVideoTime = rawTarget >= safeDur ? rawTarget % safeDur : rawTarget;
+
+          if (isPlaying) {
+            if (Math.abs(m.element.currentTime - targetVideoTime) > 0.35 && !m.element.seeking) {
+              m.element.currentTime = targetVideoTime;
+            }
+            if (m.element.paused) {
+              m.element.muted = masterVol === 0;
+              m.element.volume = masterVol;
+              const playPromise = m.element.play();
+              if (playPromise && typeof playPromise.catch === "function") {
+                playPromise.catch(() => {
+                  m.element.muted = true;
+                  m.element.play().catch(() => {});
+                });
+              }
+            } else {
+              m.element.muted = masterVol === 0;
+              m.element.volume = masterVol;
+            }
+          } else {
+            if (!m.element.paused) m.element.pause();
+            if (Math.abs(m.element.currentTime - targetVideoTime) > 0.03 && !m.element.seeking) {
+              m.element.currentTime = targetVideoTime;
+            }
+          }
+        } else {
+          if (!m.element.paused) m.element.pause();
+        }
+      });
+
+      // 2. Musik-Spuren synchronisieren (inkl. Fade-In / Fade-Out)
+      const activeAudioClips = activeItems.filter((i) => i.kind === "audio");
+      const activeIds = new Set(activeAudioClips.map((c) => c.id));
+
+      activeTimelineAudioEls.forEach((audioEl, clipId) => {
+        if (!activeIds.has(clipId) || !isPlaying) {
+          audioEl.pause();
+        }
+      });
+
+      if (isPlaying) {
+        activeAudioClips.forEach((clip) => {
+          const src = clip.musicBlobUrl || clip.musicPath;
+          if (!src) return;
+          let audioEl = activeTimelineAudioEls.get(clip.id);
+          if (!audioEl) {
+            audioEl = new Audio(src);
+            audioEl.crossOrigin = "anonymous";
+            activeTimelineAudioEls.set(clip.id, audioEl);
+          }
+
+          const elapsed = Math.max(0, t - clip.startTime);
+          const remaining = Math.max(0, clip.duration - elapsed);
+          const fadeInFactor = clip.fadeIn > 0 ? Math.min(1, elapsed / clip.fadeIn) : 1;
+          const fadeOutFactor = clip.fadeOut > 0 ? Math.min(1, remaining / clip.fadeOut) : 1;
+          audioEl.volume = Math.max(0, Math.min(1, (clip.volume || 0.8) * masterVol * fadeInFactor * fadeOutFactor));
+
+          if (Math.abs(audioEl.currentTime - elapsed) > 0.35) {
+            audioEl.currentTime = elapsed;
+          }
+          if (audioEl.paused) {
+            audioEl.play().catch(() => {});
+          }
+        });
+      }
+    }
+
+    // ============================================================================
+    // 13. COMPOSITING & ANIMATIONS-RENDERER (CANVAS 2D)
+    // ============================================================================
+    function getVisibleItemsAtTime(t) {
+      const visibleTracks = new Set(state.tracks.filter((tr) => tr.visible).map((tr) => tr.id));
+      const trackOrder = new Map(state.tracks.map((tr, idx) => [tr.id, idx]));
+
+      return state.items
+        .filter((it) => visibleTracks.has(it.trackId) && t >= it.startTime && t <= it.startTime + it.duration)
+        .sort((a, b) => (trackOrder.get(b.trackId) || 0) - (trackOrder.get(a.trackId) || 0));
+    }
+
+    function computeAnimationTransform(item, elapsed, remaining, W, H) {
+      const dur = Math.max(0.1, item.animDuration || 0.6);
+      const pIn = Math.min(1, elapsed / dur);
+      const pOut = Math.min(1, remaining / dur);
+
+      const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
+      const easeOutBack = (x) => {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+      };
+
+      let alpha = 1;
+      let dx = 0;
+      let dy = 0;
+      let scale = item.scale || 1;
+      let rotDeg = item.rotation || 0;
+      let blurPx = 0;
+      let wipePct = 1;
+
+      // Eingangs-Animation
+      const aIn = item.animIn || "none";
+      if (pIn < 1 && aIn !== "none") {
+        const e = easeOutCubic(pIn);
+        if (aIn === "fade" || aIn === "dissolve") alpha *= e;
+        else if (aIn === "slideUp") {
+          alpha *= e;
+          dy += (1 - e) * H * 0.18;
+        } else if (aIn === "slideDown") {
+          alpha *= e;
+          dy -= (1 - e) * H * 0.18;
+        } else if (aIn === "slideLeft") {
+          alpha *= e;
+          dx += (1 - e) * W * 0.22;
+        } else if (aIn === "slideRight") {
+          alpha *= e;
+          dx -= (1 - e) * W * 0.22;
+        } else if (aIn === "zoomIn") {
+          alpha *= e;
+          scale *= 0.7 + 0.3 * e;
+        } else if (aIn === "zoomOut") {
+          alpha *= e;
+          scale *= 1.35 - 0.35 * e;
+        } else if (aIn === "popBounce") {
+          alpha *= Math.min(1, pIn * 2.5);
+          scale *= 0.55 + 0.45 * easeOutBack(pIn);
+        } else if (aIn === "blurFade") {
+          alpha *= e;
+          blurPx += (1 - e) * 18;
+        } else if (aIn === "wipeRight") {
+          wipePct = e;
+        } else if (aIn === "rotateIn") {
+          alpha *= e;
+          scale *= 0.75 + 0.25 * e;
+          rotDeg += (1 - e) * -14;
+        } else if (aIn === "glitch") {
+          dx += (Math.random() - 0.5) * (1 - pIn) * 40;
+          alpha *= pIn > 0.2 ? 1 : 0.4;
+        }
+      }
+
+      // Ausgangs-Animation
+      const aOut = item.animOut || "none";
+      if (pOut < 1 && aOut !== "none") {
+        const e = easeOutCubic(pOut);
+        if (aOut === "fade") alpha *= e;
+        else if (aOut === "slideUp") {
+          alpha *= e;
+          dy -= (1 - e) * H * 0.18;
+        } else if (aOut === "slideDown") {
+          alpha *= e;
+          dy += (1 - e) * H * 0.18;
+        } else if (aOut === "slideLeft") {
+          alpha *= e;
+          dx -= (1 - e) * W * 0.22;
+        } else if (aOut === "slideRight") {
+          alpha *= e;
+          dx += (1 - e) * W * 0.22;
+        } else if (aOut === "zoomIn") {
+          alpha *= e;
+          scale *= 1 + (1 - e) * 0.3;
+        } else if (aOut === "zoomOut") {
+          alpha *= e;
+          scale *= 0.7 + 0.3 * e;
+        } else if (aOut === "blurFade") {
+          alpha *= e;
+          blurPx += (1 - e) * 18;
+        }
+      }
+
+      // Dauer-Loop-Bewegung
+      const loop = item.animLoop || "none";
+      if (loop === "float") {
+        dy += Math.sin(elapsed * 2.4) * (H * 0.014);
+      } else if (loop === "pulse") {
+        scale *= 1 + Math.sin(elapsed * 3.0) * 0.03;
+      } else if (loop === "sway") {
+        rotDeg += Math.sin(elapsed * 1.8) * 2.5;
+      } else if (loop === "kenBurns") {
+        scale *= 1 + (elapsed / Math.max(1, item.duration)) * 0.12;
+      }
+
+      return { alpha, dx, dy, scale, rotDeg, blurPx, wipePct };
+    }
+
+    function renderFrame() {
+      renderFrameToContext(ctx, canvas.width, canvas.height, state.currentTime);
+    }
+
+    function renderFrameToContext(targetCtx, W, H, t) {
+      targetCtx.save();
+      targetCtx.fillStyle = "#141414";
+      targetCtx.fillRect(0, 0, W, H);
+
+      const items = getVisibleItemsAtTime(t);
+
+      items.forEach((item) => {
+        if (item.kind === "audio") return;
+        const elapsed = Math.max(0, t - item.startTime);
+        const remaining = Math.max(0, item.startTime + item.duration - t);
+        const anim = computeAnimationTransform(item, elapsed, remaining, W, H);
+
+        if (item.kind === "scene" && item.showBg !== false) {
+          targetCtx.save();
+          targetCtx.globalAlpha = Math.max(0, Math.min(1, anim.alpha));
+          targetCtx.fillStyle = item.bgColor || "#1A1A1A";
+          targetCtx.fillRect(0, 0, W, H);
+
+          // Dezentes Studio-Raster im Hintergrund
+          targetCtx.strokeStyle = "rgba(255,255,255,0.03)";
+          targetCtx.lineWidth = 1;
+          const step = Math.round(W / 16);
+          for (let gx = 0; gx < W; gx += step) {
+            targetCtx.beginPath();
+            targetCtx.moveTo(gx, 0);
+            targetCtx.lineTo(gx, H);
+            targetCtx.stroke();
+          }
+          targetCtx.restore();
+        }
+
+        targetCtx.save();
+        targetCtx.globalAlpha = Math.max(0, Math.min(1, anim.alpha));
+        if (anim.blurPx > 0.2) {
+          targetCtx.filter = `blur(${anim.blurPx.toFixed(1)}px)`;
+        }
+
+        if (anim.wipePct < 0.999) {
+          targetCtx.beginPath();
+          targetCtx.rect(0, 0, W * anim.wipePct, H);
+          targetCtx.clip();
+        }
+
+        const cx = W / 2 + ((item.x || 0) / 100) * W + anim.dx;
+        const cy = H / 2 + ((item.y || 0) / 100) * H + anim.dy;
+
+        targetCtx.translate(cx, cy);
+        targetCtx.rotate((anim.rotDeg * Math.PI) / 180);
+        targetCtx.scale(anim.scale, anim.scale);
+
+        if (item.kind === "media") {
+          renderMediaLayer(targetCtx, item, elapsed, W, H);
+        } else if (item.kind === "scene") {
+          renderPhoneSceneCutout(targetCtx, item, elapsed, W, H);
+        } else if (item.kind === "text") {
+          renderTextLayer(targetCtx, item, W, H);
+        }
+
+        targetCtx.restore();
+      });
+
+      targetCtx.restore();
+    }
+
+    function renderMediaLayer(targetCtx, item, elapsed, W, H) {
+      const media = state.mediaLibrary.find((m) => m.id === item.mediaId);
+      if (!media) {
+        // Platzhalter für ungebundene Config-Clips
+        targetCtx.fillStyle = "#222222";
+        targetCtx.fillRect(-W / 2, -H / 2, W, H);
+        targetCtx.fillStyle = "#9E9E9E";
+        targetCtx.font = "600 24px 'Plus Jakarta Sans', sans-serif";
+        targetCtx.textAlign = "center";
+        targetCtx.fillText(`Platzhalter: ${item.expectedMediaName || item.name}`, 0, 0);
+        return;
+      }
+      drawMediaContentCover(targetCtx, media, elapsed, -W / 2, -H / 2, W, H);
+    }
+
+    function drawMediaContentCover(targetCtx, media, elapsed, boxX, boxY, boxW, boxH) {
+      if (media.type === "procedural") {
+        targetCtx.save();
+        targetCtx.translate(boxX, boxY);
+        drawProceduralClip(targetCtx, media.pattern, elapsed, boxW, boxH);
+        targetCtx.restore();
+        return;
+      }
+
+      if (!media.element) return;
+
+      // Codec-Warnung direkt im Canvas anzeigen, falls H.265/HEVC oder kein Videotrack vorliegt
+      if (media.codecWarning) {
+        targetCtx.fillStyle = "#1E1E1E";
+        targetCtx.fillRect(boxX, boxY, boxW, boxH);
+        targetCtx.fillStyle = "#D4D4D4";
+        targetCtx.font = "700 20px 'Plus Jakarta Sans', sans-serif";
+        targetCtx.textAlign = "center";
+        targetCtx.fillText(media.codecWarning, boxX + boxW / 2, boxY + boxH / 2);
+        return;
+      }
+
+      let drawable = media.element;
+      let srcW = 1280;
+      let srcH = 720;
+
+      if (media.type === "video") {
+        if (media.element.readyState >= 2 && media.element.videoWidth > 0) {
+          if (media.snapshotFrame) media.snapshotFrame();
+          drawable = media.element;
+          srcW = media.element.videoWidth;
+          srcH = media.element.videoHeight;
+        } else if (media.hasValidFrame && media.frameCanvas) {
+          // Persistenter Frame-Buffer verhindert schwarze Frames beim Scrubben oder Decoder-Wechsel
+          drawable = media.frameCanvas;
+          srcW = media.frameCanvas.width;
+          srcH = media.frameCanvas.height;
+        } else {
+          return;
+        }
+      } else {
+        srcW = media.element.naturalWidth || 1280;
+        srcH = media.element.naturalHeight || 720;
+      }
+
+      const srcRatio = srcW / srcH;
+      const dstRatio = boxW / boxH;
+
+      let drawW = boxW;
+      let drawH = boxH;
+      let drawX = boxX;
+      let drawY = boxY;
+
+      if (srcRatio > dstRatio) {
+        drawW = boxH * srcRatio;
+        drawX = boxX + (boxW - drawW) / 2;
+      } else {
+        drawH = boxW / srcRatio;
+        drawY = boxY + (boxH - drawH) / 2;
+      }
+
+      try {
+        targetCtx.drawImage(drawable, drawX, drawY, drawW, drawH);
+      } catch (e) {
+        if (media.hasValidFrame && media.frameCanvas) {
+          try {
+            targetCtx.drawImage(media.frameCanvas, drawX, drawY, drawW, drawH);
+          } catch (err) {}
+        }
+      }
+    }
+
+    function roundRectPath(cCtx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      cCtx.beginPath();
+      cCtx.moveTo(x + radius, y);
+      cCtx.arcTo(x + w, y, x + w, y + h, radius);
+      cCtx.arcTo(x + w, y + h, x, y + h, radius);
+      cCtx.arcTo(x, y + h, x, y, radius);
+      cCtx.arcTo(x, y, x + w, y, radius);
+      cCtx.closePath();
+    }
+
+    // ============================================================================
+    // 14. MP4 EXPORT ENGINE (EXAKT BIS ZUM LETZTEN CLIP)
+    // ============================================================================
+    let exportCancelled = false;
+
+    function openExportModal() {
+      if (state.isPlaying) togglePlay();
+      recalculateTotalDuration();
+      document.getElementById("exportExactDuration").textContent = formatTimecode(state.totalDuration);
+      document.getElementById("exportProgressWrap").classList.add("hidden");
+      document.getElementById("startExportBtn").disabled = false;
+      document.getElementById("exportModal").classList.remove("hidden");
+    }
+
+    function closeExportModal() {
+      exportCancelled = true;
+      document.getElementById("exportModal").classList.add("hidden");
+    }
+
+    async function startMp4Export() {
+      exportCancelled = false;
+      recalculateTotalDuration();
+      const duration = state.totalDuration;
+      const resHeight = parseInt(document.getElementById("exportRes").value);
+      const fps = parseInt(document.getElementById("exportFps").value);
+
+      const ratios = { "16:9": 16 / 9, "9:16": 9 / 16, "1:1": 1 };
+      const r = ratios[state.aspectRatio] || 16 / 9;
+      const expH = state.aspectRatio === "9:16" ? Math.round(resHeight * (16 / 9)) : resHeight;
+      const expW = Math.round(expH * r);
+
+      const expCanvas = document.createElement("canvas");
+      expCanvas.width = expW;
+      expCanvas.height = expH;
+      const expCtx = expCanvas.getContext("2d");
+
+      const progressWrap = document.getElementById("exportProgressWrap");
+      const progressBar = document.getElementById("exportProgressBar");
+      const percentText = document.getElementById("exportPercentText");
+      const statusText = document.getElementById("exportStatusText");
+      const startBtn = document.getElementById("startExportBtn");
+
+      progressWrap.classList.remove("hidden");
+      startBtn.disabled = true;
+
+      const mimeCandidates = [
+        "video/mp4;codecs=avc1",
+        "video/mp4",
+        "video/webm;codecs=vp9",
+        "video/webm"
+      ];
+      const mimeType = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || "";
+
+      const stream = expCanvas.captureStream(fps);
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 8_000_000 } : undefined);
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.start();
+
+      const totalFrames = Math.ceil(duration * fps);
+      const frameIntervalMs = 1000 / fps;
+
+      for (let f = 0; f <= totalFrames; f++) {
+        if (exportCancelled) {
+          recorder.stop();
+          return;
+        }
+        const t = Math.min(duration, f / fps);
+        syncMediaAndAudioToTime(t, false);
+        renderFrameToContext(expCtx, expW, expH, t);
+
+        const pct = Math.min(100, Math.round((f / totalFrames) * 100));
+        progressBar.style.width = pct + "%";
+        percentText.textContent = pct + "%";
+        statusText.textContent = `Rendere Frame ${f}/${totalFrames}...`;
+
+        await new Promise((res) => setTimeout(res, frameIntervalMs));
+      }
+
+      await new Promise((resolve) => {
+        recorder.onstop = resolve;
+        recorder.stop();
+      });
+
+      const blob = new Blob(chunks, { type: mimeType || "video/mp4" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const titleSlug = (document.getElementById("projectTitleInput").value.trim() || "MonoCut_Export").replace(/[^a-zA-Z0-9_-]/g, "_");
+      a.href = url;
+      a.download = `${titleSlug}.mp4`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      closeExportModal();
+      showSnackbar(`MP4 Export abgeschlossen (${duration.toFixed(1)}s)`);
+    }
+
+    // ============================================================================
+    // 15. KEYBOARD SHORTCUTS & BOOTSTRAP
+    // ============================================================================
+    window.addEventListener("keydown", (e) => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "s" || e.key === "S") {
+        splitSelectedAtPlayhead();
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        deleteSelectedItem();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      resizePreviewCanvas();
+      renderFrame();
+    });
+
+    window.onload = async function () {
+      buildMonochromeSwatches();
+      resizePreviewCanvas();
+      initMusicLibrary();
+      await initCustomFonts();
+      loadBrowserSavedConfigs();
+      createProceduralDemoClips(true);
+      selectItem("demo_scene_1");
+      renderFrame();
+      discoverRepoAssets(false);
+    };
+  </script>
+</body>
+</html>
